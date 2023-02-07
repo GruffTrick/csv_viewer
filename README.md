@@ -1,2 +1,2 @@
-# CSV-Viewer
+# CSV Viewer
 Lightweight CSV Viewer for Linux use.
