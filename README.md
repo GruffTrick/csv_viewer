@@ -1,9 +1,14 @@
 # CSV Viewer
 Lightweight CSV Viewer for use in Linux.
-Currently being written in Rust.
+Currently, being written in Rust.
 
 
-
+# Running the Application
+Until the release binary available, running the debug binary from the terminal is required.
+Run the binary in target/debug directory of the source code and piping in the csv file is required.
+```
+./target/debug/CSV-Viewer < "CSVFILENAME.csv"
+```
 
 
 
