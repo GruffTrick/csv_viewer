@@ -1,14 +1,15 @@
-use std::io;
+#![warn(clippy::all, rust_2018_idioms)]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-fn main() {
-    // println!("Hello, world!");
+#[cfg(not(target_arch = "wasm32"))]
+fn main() -> eframe::Result<()>{
+    // Log to stdout (if you run with `RUST_LOG=debug`).
+    tracing_subscriber::fmt::init();
 
-    let mut rdr = csv::Reader::from_reader(io::stdin());
-
-    for result in rdr.records() {
-        let record = result.expect("a csv record");
-
-        println!("{:?}", record)
-    }
-
+    let native_options = eframe::NativeOptions::default();
+    eframe::run_native(
+        "Viewer eframe template",
+        native_options,
+        Box::new(|cc| Box::new(csv_viewer::ViewerApp::new(cc))),
+    )
 }
