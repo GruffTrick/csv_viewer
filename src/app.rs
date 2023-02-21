@@ -38,7 +38,7 @@ impl eframe::App for ViewerApp {
 
         #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
+            // top panel for a menu bar:
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Quit").clicked() {
@@ -46,6 +46,11 @@ impl eframe::App for ViewerApp {
                     }
                 });
             });
+        });
+
+        egui::TopBottomPanel::bottom("bottom_panele").show(ctx, |ui| {
+           // Bottom panel for displaying contextual info like the debug identifier and coordinates.
+            egui::warn_if_debug_build(ui);
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -57,7 +62,6 @@ impl eframe::App for ViewerApp {
                 "https://github.com/emilk/eframe_template/blob/master/",
                 "Source code."
             ));
-            egui::warn_if_debug_build(ui);
         });
 
         if false {
