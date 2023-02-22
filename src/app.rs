@@ -1,3 +1,5 @@
+use egui::WidgetType::SelectableLabel;
+
 /// We derive Deserialize/Serialize so we can persist app state
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -62,15 +64,21 @@ impl eframe::App for ViewerApp {
                 "https://github.com/emilk/eframe_template/blob/master/",
                 "Source code."
             ));
+            #[derive(PartialEq)]
+            enum Enum { First, Second, Third }
+            let mut my_enum = Enum::First;
+
+            ui.selectable_value(&mut my_enum, Enum::First, "First");
+            ui.selectable_value(&mut my_enum, Enum::First, "Second");
         });
 
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally choose either panels OR windows.");
-            });
-        }
+        // if false {
+        //     egui::Window::new("Window").show(ctx, |ui| {
+        //         ui.label("Windows can be moved by dragging them.");
+        //         ui.label("They are automatically sized based on contents.");
+        //         ui.label("You can turn on resizing and scrolling if you like.");
+        //         ui.label("You would normally choose either panels OR windows.");
+        //     });
+        // }
     }
 }
