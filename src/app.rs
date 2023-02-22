@@ -1,8 +1,8 @@
 use std::vec::IntoIter;
 use egui::WidgetType::SelectableLabel;
 
-const NUM_ROWS: i32 = 100;
-const NUM_COLUMNS: i32 = 100;
+pub const NUM_ROWS: i32 = 100;
+pub const NUM_COLUMNS: i32 = 100;
 
 /// We derive Deserialize/Serialize so we can persist app state
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -36,7 +36,7 @@ impl eframe::App for ViewerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let Self { label, value } = self;
 
-        // #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
+        #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // top panel for a menu bar:
             egui::menu::bar(ui, |ui| {
@@ -53,7 +53,7 @@ impl eframe::App for ViewerApp {
                 egui::Grid::new("some_unique_id").show(ui, |ui| {
                     for row in 1..NUM_ROWS {
                         for column in 1..NUM_COLUMNS {
-                            ui.label("");
+                            ui.label("{row},{column}");
                         }
                         ui.end_row();
                     }
