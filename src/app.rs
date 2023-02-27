@@ -1,5 +1,6 @@
 use std::vec::IntoIter;
 use egui::WidgetType::SelectableLabel;
+use serde::de::Unexpected::Str;
 
 pub const NUM_ROWS: i32 = 100;
 pub const NUM_COLUMNS: i32 = 100;
@@ -53,7 +54,7 @@ impl eframe::App for ViewerApp {
                 egui::Grid::new("some_unique_id").show(ui, |ui| {
                     for row in 1..NUM_ROWS {
                         for column in 1..NUM_COLUMNS {
-                            ui.label("{row},{column}");
+                            ui.label(format!("{},{}",row,column));
                         }
                         ui.end_row();
                     }
