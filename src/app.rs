@@ -1,6 +1,7 @@
 use std::ffi::OsString;
 use std::vec::IntoIter;
 use csv::StringRecord;
+use crate::read_from_file;
 
 
 pub const NUM_ROWS: i32 = 100;
@@ -12,7 +13,7 @@ pub struct ViewerApp {
 impl Default for ViewerApp {
     fn default() -> Self {
         Self {
-            records: Vec::new(),
+            records: read_from_file(),
         }
     }
 }
@@ -46,12 +47,17 @@ impl eframe::App for ViewerApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::both().show(ui,|ui| {
                 egui::Grid::new("some_unique_id").show(ui, |ui| {
-                    for row in 1..NUM_ROWS {
-                        for column in 1..NUM_COLUMNS {
-                            ui.label(format!("{},{}",row,column));
-                        }
+                    for (row, record) in records.iter().enumerate() {
+                        // println!("In position {} we have value {:?}", row, record);
+                        ui.label(format!("In position {} we have value {:?}", row, record));
                         ui.end_row();
                     }
+                    // for row in 1..NUM_ROWS {
+                    //     for column in 1..NUM_COLUMNS {
+                    //         ui.label(format!("{},{}",row,column));
+                    //     }
+                    //     ui.end_row();
+                    // }
                 });
             });
         });
@@ -67,17 +73,4 @@ impl eframe::App for ViewerApp {
     // fn save(&mut self, storage: &mut dyn eframe::Storage) {
     //     eframe::set_value(storage, eframe::APP_KEY, self);
     // }
-}
-
-
-pub fn run_app(v: &mut Vec<StringRecord>) -> eframe::Result<()> {
-
-    // Log to stdout (if you run with `RUST_LOG=debug`).
-    tracing_subscriber::fmt::init();
-    let native_options = eframe::NativeOptions::default();
-    eframe::run_native(
-        "CSV Viewer",
-        native_options,
-        Box::new(|cc| Box::new(ViewerApp::new(cc))),
-    )
 }

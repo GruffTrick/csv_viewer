@@ -7,7 +7,7 @@ pub fn read_from_file() -> Vec<StringRecord> {
 
     for result in rdr.records() {
         let record = result.expect("a csv record");
-        println!("{:?}", record);
+        // println!("{:?}", record);
         v.push(record)
     }
     println!("{:?}", v);
