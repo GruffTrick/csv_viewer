@@ -1,8 +1,15 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
+use csv::StringRecord;
+use crate::reader::read_from_file;
+
+mod reader;
+
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()>{
+    let v: Vec<StringRecord> = read_from_file();
+
     // Log to stdout (if you run with `RUST_LOG=debug`).
     tracing_subscriber::fmt::init();
 
