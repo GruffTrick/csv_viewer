@@ -1,22 +1,12 @@
-#![warn(clippy::all, rust_2018_idioms)]
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
-
+use std::process::exit;
 use csv::StringRecord;
-use crate::reader::read_from_file;
+use csv_viewer::read_from_file;
 
-mod reader;
 
-#[cfg(not(target_arch = "wasm32"))]
-fn main() -> eframe::Result<()>{
+fn main() -> eframe::Result<()> {
     let v: Vec<StringRecord> = read_from_file();
 
-    // Log to stdout (if you run with `RUST_LOG=debug`).
-    tracing_subscriber::fmt::init();
+    // run_app(v);
 
-    let native_options = eframe::NativeOptions::default();
-    eframe::run_native(
-        "Viewer eframe template",
-        native_options,
-        Box::new(|cc| Box::new(csv_viewer::ViewerApp::new(cc))),
-    )
+    exit(1)
 }

@@ -1,26 +1,18 @@
+use std::ffi::OsString;
 use std::vec::IntoIter;
-use egui::WidgetType::SelectableLabel;
-use serde::de::Unexpected::Str;
+use csv::StringRecord;
+
 
 pub const NUM_ROWS: i32 = 100;
 pub const NUM_COLUMNS: i32 = 100;
 
-/// We derive Deserialize/Serialize so we can persist app state
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct ViewerApp {
-    label: String,
-
-    #[serde(skip)]
-    value: f32,
+    records: Vec<StringRecord>
 }
-
 impl Default for ViewerApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            records: Vec::new(),
         }
     }
 }
@@ -32,12 +24,13 @@ impl ViewerApp {
 }
 
 impl eframe::App for ViewerApp {
+
     /// Called each time the UI needs to be repainted
     /// Widgets are placed inside of their respective panels
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { label, value } = self;
+        let Self { records} = self;
 
-        #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
+        //#[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // top panel for a menu bar:
             egui::menu::bar(ui, |ui| {
@@ -49,6 +42,7 @@ impl eframe::App for ViewerApp {
             });
         });
 
+        // Central Panel, displays main content of the viewer, the grid of cells.
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::both().show(ui,|ui| {
                 egui::Grid::new("some_unique_id").show(ui, |ui| {
@@ -62,16 +56,28 @@ impl eframe::App for ViewerApp {
             });
         });
 
-        // Disabled until it doesn't obscure the scroll bar.
-        // egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-        //     // Bottom panel for displaying contextual info like the debug identifier and coordinates.
-        //     egui::warn_if_debug_build(ui);
-        // });
+        // Bottom panel for displaying contextual info like the debug identifier and coordinates.
+        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+            egui::warn_if_debug_build(ui);
+        });
 
     }
 
-    // /// Called by the frame work to save current state before shutdown.
+    // Called by the frame work to save current state before shutdown.
     // fn save(&mut self, storage: &mut dyn eframe::Storage) {
     //     eframe::set_value(storage, eframe::APP_KEY, self);
     // }
+}
+
+
+pub fn run_app(v: &mut Vec<StringRecord>) -> eframe::Result<()> {
+
+    // Log to stdout (if you run with `RUST_LOG=debug`).
+    tracing_subscriber::fmt::init();
+    let native_options = eframe::NativeOptions::default();
+    eframe::run_native(
+        "CSV Viewer",
+        native_options,
+        Box::new(|cc| Box::new(ViewerApp::new(cc))),
+    )
 }
