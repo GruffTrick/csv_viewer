@@ -1,5 +1,5 @@
-mod app;
+mod viewer;
 mod reader;
 
-pub use app::ViewerApp;
+pub use viewer::ViewerApp;
 pub use reader::read_from_file;
