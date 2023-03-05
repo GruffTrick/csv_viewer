@@ -1,30 +1,41 @@
+use std::fs::{File, read};
 use std::io;
+use std::io::Stdin;
 use std::path::Path;
 use csv::{Reader, StringRecord};
 
 
-pub fn read_from_stdin() -> Vec<StringRecord> {
+pub fn get_reader_stdin() -> Reader<io::Stdin> {
     let mut reader = Reader::from_reader(io::stdin());
-    let mut v: Vec<StringRecord> = Vec::new();
+    reader
+}
 
-    {
-        let headers = reader.headers();
-        println!("{:?}", headers);
-    }
+// pub fn get_reader_path(p: &Path) -> Reader<File> {
+//     let mut reader = Reader::from_path(p);
+//     let mut v: Vec<StringRecord> = Vec::new();
+//
+//     reader
+// }
+
+pub fn get_records(reader:Reader<Stdin>) -> Vec<StringRecord> {
+    let mut reader = reader;
+    let mut records: Vec<StringRecord> = Vec::new();
 
     for result in reader.records() {
         let record = result.expect("a csv record");
         // println!("{:?}", record);
-        v.push(record)
+        records.push(record)
     }
-    println!("{:?}", v);
-    v
+    println!("{:?}", records);
+
+    records
 }
 
-
-pub fn read_from_path(p: &Path) -> Vec<StringRecord> {
-    let mut _reader = Reader::from_path(p);
-    let mut v: Vec<StringRecord> = Vec::new();
-
-    v
-}
+// pub fn get_headers() -> Vec<StringRecord>{
+//
+//     // {
+//     //     let h = reader.headers();
+//     //     println!("{:?}", h);
+//     //     headers.copy(h);
+//     // }
+// }

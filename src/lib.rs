@@ -1,5 +1,7 @@
 mod viewer;
 mod reader;
 
-pub use viewer::ViewerApp;
-pub use reader::read_from_stdin;
+pub use viewer::run_app;
+
+pub use reader::get_reader_stdin;
+pub use reader::get_records;
