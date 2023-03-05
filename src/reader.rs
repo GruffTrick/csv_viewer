@@ -1,5 +1,4 @@
 use std::io;
-use std::net::Shutdown::Read;
 use std::path::Path;
 use csv::{Reader, StringRecord};
 
