@@ -4,8 +4,9 @@ use std::ffi::OsString;
 use std::vec::IntoIter;
 use csv::StringRecord;
 use rfd::FileDialog;
+use tracing_subscriber::fmt::format;
 
-use crate::read_from_file;
+use crate::read_from_stdin;
 
 
 pub const NUM_ROWS: i32 = 100;
@@ -19,7 +20,7 @@ pub struct ViewerApp {
 impl Default for ViewerApp {
     fn default() -> Self {
         Self {
-            records: read_from_file(),
+            records: read_from_stdin(),
             file_path: None,
         }
     }
@@ -29,6 +30,8 @@ impl ViewerApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         Default::default()
     }
+
+    pub fn configured(cc: &eframe::CreationContext<'_>) -> Self { Default::default()}
 }
 
 impl eframe::App for ViewerApp {
@@ -36,6 +39,7 @@ impl eframe::App for ViewerApp {
     /// Called each time the UI needs to be repainted
     /// Widgets are placed inside of their respective panels
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+
         let Self { records, file_path: _file_path } = self;
 
         //#[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
@@ -46,7 +50,7 @@ impl eframe::App for ViewerApp {
                 ui.menu_button("File", |ui| {
                     // Opens file dialogue window.
                     if ui.button("Open").clicked() {
-                        if let Some(path) = rfd::FileDialog::new().pick_file() {
+                        if let Some(path) = FileDialog::new().pick_file() {
                             self.file_path = Some(path.display().to_string());
                         }
                     }

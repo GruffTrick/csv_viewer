@@ -1,6 +1,6 @@
 use std::process::exit;
 use csv::StringRecord;
-use csv_viewer::read_from_file;
+use csv_viewer::read_from_stdin;
 
 
 fn main() -> eframe::Result<()> {
@@ -12,6 +12,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "CSV Viewer",
         native_options,
-        Box::new(|cc| Box::new(csv_viewer::ViewerApp::new(cc))),
+        Box::new(|cc| Box::new(csv_viewer::ViewerApp::configured(cc))),
     )
 }
