@@ -62,18 +62,19 @@ impl eframe::App for ViewerApp {
             });
         });
 
-        // Central Panel, displays main content of the viewer, the grid of cells.
+        // Central Panel, displays main content of the viewer,
+        // the Table of Cells.
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::both().show(ui,|ui| {
                 egui::Grid::new("some_unique_id").show(ui, |ui| {
+                    // for (row, record) in records.iter().enumerate() {
+                    //     // println!("In position {} we have value {:?}", row, record);
+                    //     ui.label(format!("In position {} we have value {:?}", row, record));
+                    //     ui.end_row();
+                    // }
                     for (row, record) in records.iter().enumerate() {
-                        // println!("In position {} we have value {:?}", row, record);
-                        ui.label(format!("In position {} we have value {:?}", row, record));
-                        ui.end_row();
-                    }
-                    for row in 1..NUM_ROWS {
-                        for column in 1..NUM_COLUMNS {
-                            ui.label(format!("{},{}",row,column));
+                        for column in record {
+                            ui.label(format!("{}", column));
                         }
                         ui.end_row();
                     }
