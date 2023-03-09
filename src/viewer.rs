@@ -2,18 +2,20 @@
 
 use std::vec::IntoIter;
 use csv::StringRecord;
+use egui::accesskit::Size;
+use egui::style::default_text_styles;
 use rfd::FileDialog;
 use tracing_subscriber::fmt::format;
 
 use crate::get_reader_stdin;
 
 
-pub const NUM_ROWS: i32 = 100;
-pub const NUM_COLUMNS: i32 = 100;
+pub const MAX_NUM_ROWS: i32 = 1000;
+pub const MAX_NUM_COLUMNS: i32 = 1000;
 
 
 pub struct ViewerApp {
-    headers: Vec<StringRecord>,
+    headers: StringRecord,
     records: Vec<StringRecord>,
     file_path: Option<String>,
 }
@@ -21,7 +23,7 @@ pub struct ViewerApp {
 impl Default for ViewerApp {
     fn default() -> Self {
         Self {
-            headers: Vec::new(),
+            headers: Default::default(),
             records: Vec::new(),
             file_path: None,
         }
@@ -40,6 +42,7 @@ impl eframe::App for ViewerApp {
     /// Widgets are placed inside of their respective panels
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 
+        // initiate self
         let Self { headers, records, file_path } = self;
 
         //#[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
@@ -62,16 +65,19 @@ impl eframe::App for ViewerApp {
             });
         });
 
-        // Central Panel, displays main content of the viewer,
-        // the Table of Cells.
+        // Central Panel. Displays the Cells.
         egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::both().show(ui,|ui| {
+
+            egui::ScrollArea::both().show(ui, |ui| {
                 egui::Grid::new("some_unique_id").show(ui, |ui| {
-                    // for (row, record) in records.iter().enumerate() {
-                    //     // println!("In position {} we have value {:?}", row, record);
-                    //     ui.label(format!("In position {} we have value {:?}", row, record));
-                    //     ui.end_row();
-                    // }
+
+                    // display headers
+                    for (record) in headers.iter() {
+                        ui.label(format!("{}", record));
+                    }
+                    ui.end_row();
+
+                    // display records
                     for (row, record) in records.iter().enumerate() {
                         for column in record {
                             ui.label(format!("{}", column));
@@ -80,9 +86,11 @@ impl eframe::App for ViewerApp {
                     }
                 });
             });
+            egui::warn_if_debug_build(ui);
         });
 
         // Bottom panel for displaying contextual info like the debug identifier and coordinates.
+        // CURRENTLY OBFUSCATES THE BOTTOM SCROLL BAR!!
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             egui::warn_if_debug_build(ui);
         });
@@ -95,7 +103,7 @@ impl eframe::App for ViewerApp {
 }
 
 
-pub fn run_app(headers: Vec<StringRecord>, records: Vec<StringRecord>) -> eframe::Result<()> {
+pub fn run_app(headers: StringRecord, records: Vec<StringRecord>, file_path: Option<String>) -> eframe::Result<()> {
 
     let mut v = ViewerApp {
         headers,
