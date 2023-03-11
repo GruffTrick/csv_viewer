@@ -9,6 +9,7 @@ rust-version = "1.65"
 
 [dependencies]
 csv = "1.2.0"
+atty = "0.2.14"
 egui = "0.21.0"
 egui_extras = "0.21.0"
 eframe = { version = "0.21.0", default-features = false, features = [

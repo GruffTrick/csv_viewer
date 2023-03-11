@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::borrow::BorrowMut;
+use std::path::{Path, PathBuf};
 use std::vec::IntoIter;
 use csv::StringRecord;
 use egui::accesskit::Size;
@@ -7,7 +9,7 @@ use egui::style::default_text_styles;
 use rfd::FileDialog;
 use tracing_subscriber::fmt::format;
 
-use crate::get_reader_stdin;
+use crate::reader::*;
 
 
 pub const MAX_NUM_ROWS: i32 = 1000;
@@ -43,7 +45,7 @@ impl eframe::App for ViewerApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 
         // initiate self
-        let Self { headers, records, file_path } = self;
+        // let Self { headers, records, file_path } = self;
 
         //#[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -55,6 +57,9 @@ impl eframe::App for ViewerApp {
                     if ui.button("Open").clicked() {
                         if let Some(path) = FileDialog::new().pick_file() {
                             self.file_path = Some(path.display().to_string());
+                            let mut reader = get_reader_file(self.file_path.clone());
+                            self.headers = get_headers_file(reader.borrow_mut());
+                            self.records = get_records_file(reader.borrow_mut());
                         }
                     }
                     // Closes the frame and ends the application.
@@ -72,13 +77,13 @@ impl eframe::App for ViewerApp {
                 egui::Grid::new("some_unique_id").show(ui, |ui| {
 
                     // display headers
-                    for (record) in headers.iter() {
+                    for (record) in self.headers.iter() {
                         ui.label(format!("{}", record));
                     }
                     ui.end_row();
 
                     // display records
-                    for (row, record) in records.iter().enumerate() {
+                    for (row, record) in self.records.iter().enumerate() {
                         for column in record {
                             ui.label(format!("{}", column));
                         }
