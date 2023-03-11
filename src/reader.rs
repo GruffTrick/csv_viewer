@@ -52,7 +52,7 @@ pub fn get_headers_stdin(reader: &mut Reader<Stdin>) -> StringRecord {
 }
 
 pub fn get_records_stdin(reader: &mut Reader<Stdin>) -> Vec<StringRecord> {
-    let mut reader= reader;
+    let reader= reader;
     let mut records: Vec<StringRecord> = Vec::new();
 
     for result in reader.records() {
@@ -61,7 +61,6 @@ pub fn get_records_stdin(reader: &mut Reader<Stdin>) -> Vec<StringRecord> {
         records.push(record)
     }
     println!("{:?}", records);
-
     records
 }
 

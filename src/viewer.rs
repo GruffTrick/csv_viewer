@@ -1,7 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::borrow::BorrowMut;
-use std::path::{Path, PathBuf};
 use std::vec::IntoIter;
 use csv::StringRecord;
 use egui::accesskit::Size;
@@ -9,7 +8,7 @@ use egui::style::default_text_styles;
 use rfd::FileDialog;
 use tracing_subscriber::fmt::format;
 
-use crate::reader::*;
+use crate::reader::{get_reader_file, get_headers_file, get_records_file};
 
 
 pub const MAX_NUM_ROWS: i32 = 1000;
@@ -62,6 +61,12 @@ impl eframe::App for ViewerApp {
                             self.records = get_records_file(reader.borrow_mut());
                         }
                     }
+                    // Export Changes to file
+                    if ui.button("Export as...").clicked() {
+
+                        // code here
+
+                    }
                     // Closes the frame and ends the application.
                     if ui.button("Quit").clicked() {
                         _frame.close();
@@ -77,7 +82,7 @@ impl eframe::App for ViewerApp {
                 egui::Grid::new("some_unique_id").show(ui, |ui| {
 
                     // display headers
-                    for (record) in self.headers.iter() {
+                    for record in self.headers.iter() {
                         ui.label(format!("{}", record));
                     }
                     ui.end_row();
