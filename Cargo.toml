@@ -9,7 +9,7 @@ rust-version = "1.65"
 
 [dependencies]
 csv = "1.2.0"
-atty = "0.2.14"
+atty = "0.2.14" # Easy checking if in terminal
 egui = "0.21.0"
 egui_extras = "0.21.0"
 eframe = { version = "0.21.0", default-features = false, features = [
@@ -19,6 +19,7 @@ eframe = { version = "0.21.0", default-features = false, features = [
     "persistence",   # Enable restoring app state when restarting the app.
 ] }
 
+# Rust File Dialog
 rfd = "0.11.1"
 
 # You only need serde if you want app persistence:
