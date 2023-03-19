@@ -4,6 +4,7 @@ use std::io;
 use std::io::Stdin;
 use std::path::Path;
 use std::error::Error;
+use std::mem::size_of_val;
 use csv::{Reader, StringRecord};
 
 
@@ -37,7 +38,7 @@ pub fn get_records_file(reader: &mut Reader<File>) -> Vec<StringRecord> {
         records.push(record)
     }
     println!("{:?}", records);
-
+    println!("Size of records in memory: {:?}bytes", size_of_val(&records));
     records
 }
 
@@ -61,6 +62,7 @@ pub fn get_records_stdin(reader: &mut Reader<Stdin>) -> Vec<StringRecord> {
         records.push(record)
     }
     println!("{:?}", records);
+    println!("Size of records in memory: {:?}bytes", size_of_val(&records));
     records
 }
 

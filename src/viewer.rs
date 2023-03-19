@@ -113,7 +113,8 @@ impl eframe::App for ViewerApp {
 }
 
 
-pub fn run_app(headers: StringRecord, records: Vec<StringRecord>, file_path: Option<String>) -> eframe::Result<()> {
+pub fn run_app(headers: StringRecord, records: Vec<StringRecord>,
+               file_path: Option<String>) -> eframe::Result<()> {
 
     let mut v = ViewerApp {
         headers,
