@@ -9,6 +9,7 @@ use csv::{Reader, StringRecord};
 
 use csv_viewer::*;
 
+
 fn main() {
 
     // checks if run from terminal without a file passed in
