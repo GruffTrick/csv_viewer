@@ -13,7 +13,7 @@ fn main() {
 
     // checks if run from terminal without a file passed in
     if atty::isnt(atty::Stream::Stdin){
-        // Open from piped file
+        // Open from passed file
         println!("Reading from Terminal Stdin");
         let mut reader: Reader<Stdin> = get_reader_stdin();
         let headers:StringRecord = get_headers_stdin(reader.borrow_mut());
