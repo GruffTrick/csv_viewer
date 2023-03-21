@@ -21,6 +21,7 @@ pub struct ViewerApp {
     file_path: Option<String>,
 }
 
+// Default values for the ViewerApp GUI
 impl Default for ViewerApp {
     fn default() -> Self {
         Self {
@@ -112,7 +113,7 @@ impl eframe::App for ViewerApp {
     // }
 }
 
-
+/// Launches the GUI for the Viewer App
 pub fn run_app(headers: StringRecord, records: Vec<StringRecord>,
                file_path: Option<String>) -> eframe::Result<()> {
 
