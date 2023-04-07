@@ -7,6 +7,7 @@ use egui::accesskit::Size;
 use egui::style::default_text_styles;
 use rfd::FileDialog;
 use tracing_subscriber::fmt::format;
+use egui_extras::{TableBuilder, Column};
 
 use crate::reader::{get_reader_file, get_headers_file, get_records_file};
 
@@ -79,25 +80,54 @@ impl eframe::App for ViewerApp {
         // Central Panel. Displays the Cells.
         egui::CentralPanel::default().show(ctx, |ui| {
 
-            egui::ScrollArea::both().show(ui, |ui| {
-                egui::Grid::new("some_unique_id").show(ui, |ui| {
+            // Table Builder test
 
-                    // display headers
+            use egui_extras::{TableBuilder, Column};
+            TableBuilder::new(ui)
+                .striped(true) // Eventually needs to be a struct parameter
+                .resizable(true) // Eventually needs to be a struct parameter
+                .columns(Column::auto().resizable(true), self.headers.len()-1)
+                .column(Column::remainder())
+                .header(20.0, |mut header| {
                     for record in self.headers.iter() {
-                        ui.label(format!("{}", record));
+                        header.col(|ui| {
+                            ui.heading(format!("{}", record));
+                        });
                     }
-                    ui.end_row();
-
-                    // display records
-                    for (row, record) in self.records.iter().enumerate() {
-                        for column in record {
-                            ui.label(format!("{}", column));
-                        }
-                        ui.end_row();
+                })
+                .body(|mut body| {
+                    for (line, record) in self.records.iter().enumerate() {
+                        body.row(30.0, |mut row| {
+                            for column in record {
+                                row.col(|ui| {
+                                    ui.label(format!("{}", column));
+                                });
+                            }
+                        });
                     }
                 });
-            });
-            egui::warn_if_debug_build(ui);
+
+            // end
+
+            //// Original Table inmplementation
+            // egui::ScrollArea::both().show(ui, |ui| {
+            //     egui::Grid::new("some_unique_id").show(ui, |ui| {
+            //
+            //         // display headers
+            //         for record in self.headers.iter() {
+            //             ui.label(format!("{}", record));
+            //         }
+            //         ui.end_row();
+            //
+            //         // display records
+            //         for (row, record) in self.records.iter().enumerate() {
+            //             for column in record {
+            //                 ui.label(format!("{}", column));
+            //             }
+            //             ui.end_row();
+            //         }
+            //     });
+            // });
         });
 
         // Bottom panel for displaying contextual info like the debug identifier and coordinates.
@@ -112,6 +142,7 @@ impl eframe::App for ViewerApp {
     //     eframe::set_value(storage, eframe::APP_KEY, self);
     // }
 }
+
 
 /// Launches the GUI for the Viewer App
 pub fn run_app(headers: StringRecord, records: Vec<StringRecord>,
