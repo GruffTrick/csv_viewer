@@ -80,9 +80,7 @@ impl eframe::App for ViewerApp {
         // Central Panel. Displays the Cells.
         egui::CentralPanel::default().show(ctx, |ui| {
 
-            // Table Builder test
-
-            use egui_extras::{TableBuilder, Column};
+            // Table Builder
             TableBuilder::new(ui)
                 .striped(true) // Eventually needs to be a struct parameter
                 .resizable(true) // Eventually needs to be a struct parameter
@@ -106,28 +104,7 @@ impl eframe::App for ViewerApp {
                         });
                     }
                 });
-
-            // end
-
-            //// Original Table inmplementation
-            // egui::ScrollArea::both().show(ui, |ui| {
-            //     egui::Grid::new("some_unique_id").show(ui, |ui| {
-            //
-            //         // display headers
-            //         for record in self.headers.iter() {
-            //             ui.label(format!("{}", record));
-            //         }
-            //         ui.end_row();
-            //
-            //         // display records
-            //         for (row, record) in self.records.iter().enumerate() {
-            //             for column in record {
-            //                 ui.label(format!("{}", column));
-            //             }
-            //             ui.end_row();
-            //         }
-            //     });
-            // });
+            // end of table
         });
 
         // Bottom panel for displaying contextual info like the debug identifier and coordinates.
