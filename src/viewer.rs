@@ -64,14 +64,30 @@ impl eframe::App for ViewerApp {
                         }
                     }
                     // Export Changes to file
-                    if ui.button("Export as...").clicked() {
-
+                    if ui.button("(WIP)Export as...").clicked() {
                         // code here
-
                     }
                     // Closes the frame and ends the application.
                     if ui.button("Quit").clicked() {
                         _frame.close();
+                    }
+                });
+
+                ui.menu_button("Edit", |ui| {
+                    if ui.button("(WIP)").clicked() {
+                        // code here
+                    }
+                });
+
+                ui.menu_button("Data", |ui| {
+                    if ui.button("Sort").clicked() {
+                        // code here
+                    }
+                });
+
+                ui.menu_button("Find", |ui| {
+                    if ui.button("Find Cell").clicked() {
+                        // code here
                     }
                 });
             });
@@ -109,9 +125,9 @@ impl eframe::App for ViewerApp {
 
         // Bottom panel for displaying contextual info like the debug identifier and coordinates.
         // CURRENTLY OBFUSCATES THE BOTTOM SCROLL BAR!!
-        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-            egui::warn_if_debug_build(ui);
-        });
+        // egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+        //     egui::warn_if_debug_build(ui);
+        // });
     }
 
     // Called by the frame work to save current state before shutdown.
