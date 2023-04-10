@@ -3,16 +3,19 @@ mod reader;
 
 use std::borrow::BorrowMut;
 use std::vec::IntoIter;
-use csv::{Reader, StringRecord};
-use egui::accesskit::Size;
-use egui::style::default_text_styles;
-use rfd::FileDialog;
-use tracing_subscriber::fmt::format;
-use egui_extras::{TableBuilder, Column};
 use std::fs::File;
 use std::io::{BufRead, Stdin};
+
+use csv::{Reader, StringRecord};
+
+use egui::accesskit::Size;
+use egui::style::default_text_styles;
+use egui::{Align2, Context, Painter, Vec2};
+use egui_extras::{TableBuilder, Column};
+
+use rfd::FileDialog;
 use atty;
-use egui::{Context, Painter};
+
 
 use crate::reader::*;
 
@@ -27,11 +30,28 @@ enum AppType {
     Sorter,
 }
 
+pub struct AppSettings {
+    num_rows: usize,
+    quit_confirmation: bool,
+    allowed_to_quit: bool,
+}
+
+impl Default for AppSettings {
+    fn default() -> Self {
+        Self {
+            num_rows: 100,
+            quit_confirmation: false,
+            allowed_to_quit: false,
+        }
+    }
+}
+
 pub struct ViewerApp {
     app: AppType,
     headers: StringRecord,
     records: Vec<StringRecord>,
     file_path: Option<String>,
+    settings: AppSettings,
 }
 
 // Default values for the ViewerApp GUI
@@ -42,6 +62,7 @@ impl Default for ViewerApp {
             headers: Default::default(),
             records: Vec::new(),
             file_path: None,
+            settings: Default::default(),
         }
     }
 }
@@ -52,34 +73,38 @@ impl ViewerApp {
     }
 }
 
+
 impl eframe::App for ViewerApp {
+
+    fn on_close_event(&mut self) -> bool {
+        self.settings.quit_confirmation = true;
+        self.settings.allowed_to_quit
+    }
 
     /// Called each time the UI needs to be repainted
     /// Widgets are placed inside of their respective panels
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // initiate self
-        // let Self { headers, records, file_path } = self;
-        //#[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
 
         match self.app {
             AppType::MainMenu => {
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    if ui.button("Open File").clicked() {
-                        // Open From File
-                        if let Some(path) = FileDialog::new().pick_file() {
-                            let file_path = Some(path.display().to_string());
-                            let mut reader: Reader<File> = get_reader_file(file_path.clone());
-                            self.headers = get_headers_file(reader.borrow_mut());
-                            self.records = get_records_file(reader.borrow_mut());
-                            self.app = AppType::Viewer;
+                    ui.horizontal(|ui| {
+                        if ui.button("Open File").clicked() {
+                            // Open From File
+                            if let Some(path) = FileDialog::new().pick_file() {
+                                let file_path = Some(path.display().to_string());
+                                let mut reader: Reader<File> = get_reader_file(file_path.clone());
+                                self.headers = get_headers_file(reader.borrow_mut());
+                                self.records = get_records_file(reader.borrow_mut());
+                                self.app = AppType::Viewer;
+                            }
                         }
-                    }
-                    if ui.button("Quit").clicked() {
-                        _frame.close();
-                    }
-                }
-                );
-
+                        if ui.button("Quit").clicked() {
+                            frame.close();
+                        }
+                    });
+                    egui::warn_if_debug_build(ui);
+                });
             }
             AppType::Viewer => {
                 egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -105,8 +130,10 @@ impl eframe::App for ViewerApp {
                                 self.app = AppType::MainMenu;
                             }
                             if ui.button("Quit").clicked() {
-                                _frame.close();
-                            }
+                                // Quit Confirmation Dialogue
+                                self.settings.quit_confirmation = true;
+
+                                }
                         });
 
                         ui.menu_button("Edit", |ui| {
@@ -155,7 +182,25 @@ impl eframe::App for ViewerApp {
                                 });
                             }
                         });
-                    // end of table
+
+                    if self.settings.quit_confirmation {
+                        egui::Window::new("Do you want to quit?")
+                            .collapsible(false)
+                            .resizable(false)
+                            .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
+                            .show(ctx, |ui| {
+                                ui.horizontal(|ui| {
+                                    if ui.button("Cancel").clicked() {
+                                        self.settings.quit_confirmation = false;
+                                    }
+
+                                    if ui.button("Yes!").clicked() {
+                                        self.settings.allowed_to_quit = true;
+                                        frame.close();
+                                    }
+                                });
+                            });
+                    }
                 });
             }
             AppType::Finder => {}
@@ -177,7 +222,6 @@ impl eframe::App for ViewerApp {
 
 /// Launches the GUI for the Viewer App
 pub fn run_app() -> eframe::Result<()> {
-
     let mut viewer_app = ViewerApp::default();
 
     // checks if run from terminal without a file passed in
@@ -191,27 +235,11 @@ pub fn run_app() -> eframe::Result<()> {
             app: AppType::Viewer,
             headers: get_headers_stdin(reader.borrow_mut()),
             records: get_records_stdin(reader.borrow_mut()),
-            file_path: None
+            file_path: None,
+            settings: Default::default(),
         };
-    }else {
-        // Open from file
-        // viewer_app = ViewerApp {
-        //     app: AppType::MainMenu,
-        //     headers,
-        //     records,
-        //     file_path: None
-        // };
-        //// Open From File
-        // if let Some(path) = FileDialog::new().pick_file() {
-        //     let file_path = Some(path.display().to_string());
-        //     let mut reader: Reader<File> = get_reader_file(file_path.clone());
-        //     let headers = get_headers_file(reader.borrow_mut());
-        //     let records = get_records_file(reader.borrow_mut());
-        // }
     }
 
-    // Log to stdout (if you run with `RUST_LOG=debug`).
-    tracing_subscriber::fmt::init();
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(
         "CSV Viewer",
@@ -219,6 +247,7 @@ pub fn run_app() -> eframe::Result<()> {
         Box::new(|cc| Box::new(viewer_app)),
     )
 }
+
 
 fn main() {
     run_app().expect("TODO: panic message");
