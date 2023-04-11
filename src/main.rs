@@ -177,28 +177,30 @@ impl eframe::App for ViewerApp {
                             }
                         });
 
-                    if self.settings.quit_confirmation {
-                        egui::Window::new("Do you want to quit?")
-                            .collapsible(false)
-                            .resizable(false)
-                            .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
-                            .show(ctx, |ui| {
-                                ui.horizontal(|ui| {
-                                    if ui.button("Cancel").clicked() {
-                                        self.settings.quit_confirmation = false;
-                                    }
 
-                                    if ui.button("Yes!").clicked() {
-                                        self.settings.allowed_to_quit = true;
-                                        frame.close();
-                                    }
-                                });
-                            });
-                    }
                 });
             }
             AppType::Finder => {}
             AppType::Sorter => {}
+        }
+
+        if self.settings.quit_confirmation {
+            egui::Window::new("Do you want to quit?")
+                .collapsible(false)
+                .resizable(false)
+                .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
+                .show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        if ui.button("Cancel").clicked() {
+                            self.settings.quit_confirmation = false;
+                        }
+
+                        if ui.button("Yes!").clicked() {
+                            self.settings.allowed_to_quit = true;
+                            frame.close();
+                        }
+                    });
+                });
         }
         // Bottom panel for displaying contextual info like the debug identifier and coordinates.
         // CURRENTLY OBFUSCATES THE BOTTOM SCROLL BAR!!
