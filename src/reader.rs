@@ -1,11 +1,13 @@
 use std::borrow::{Borrow, BorrowMut};
 use std::fs::{File, read};
-use std::io;
-use std::io::Stdin;
+use std::io::{Stdin,BufReader};
 use std::path::Path;
 use std::error::Error;
+use std::io;
 use std::mem::size_of_val;
 use csv::{Reader, StringRecord};
+
+const MAX_BUF_SIZE: usize = 1_000_000;
 
 /// Returns a reader object from stdin input
 pub fn get_reader_stdin() -> Reader<io::Stdin> {
@@ -70,8 +72,32 @@ pub fn get_records_stdin(reader: &mut Reader<Stdin>) -> Vec<StringRecord> {
     records
 }
 
+// fn _get_buf_reader(file_path: String) -> BufReader<File>{
+//     let file = File::open(file_path)?;
+//     let mut reader = BufReader::new(file);
+//
+//     reader
+// }
 
-fn _iterative_read_records(page: usize) -> Vec<StringRecord> {
+
+/// Reads the next chunk of records to the buffer.
+fn _read_next_buf() {
+
+    // Implementation here
+
+}
+
+
+/// Convert buffer to a Vector of StringRecord type
+/// return the String Records.
+fn _convert_to_string_record() {
+
+    // Implementation Here
+
+}
+
+
+fn _buf_read_records() -> Vec<StringRecord> {
     let mut v: Vec<StringRecord> = Vec::new();
 
     v

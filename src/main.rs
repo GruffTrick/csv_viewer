@@ -75,12 +75,6 @@ impl ViewerApp {
 
 
 impl eframe::App for ViewerApp {
-
-    fn on_close_event(&mut self) -> bool {
-        self.settings.quit_confirmation = true;
-        self.settings.allowed_to_quit
-    }
-
     /// Called each time the UI needs to be repainted
     /// Widgets are placed inside of their respective panels
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
@@ -213,6 +207,11 @@ impl eframe::App for ViewerApp {
         // });
     }
 
+    fn on_close_event(&mut self) -> bool {
+        self.settings.quit_confirmation = true;
+        self.settings.allowed_to_quit
+    }
+
     // Called by the frame work to save current state before shutdown.
     // fn save(&mut self, storage: &mut dyn eframe::Storage) {
     //     eframe::set_value(storage, eframe::APP_KEY, self);
@@ -250,6 +249,8 @@ pub fn run_app() -> eframe::Result<()> {
 
 
 fn main() {
+
+
     run_app().expect("TODO: panic message");
 
 }
