@@ -116,7 +116,7 @@ impl eframe::App for ViewerApp {
                                 }
                             }
                             // Export Changes to file
-                            if ui.button("(WIP)Export as...").clicked() {
+                            if ui.button("(WIP)Export to...").clicked() {
                                 // code here
                             }
                             // Closes the frame and ends the application.
@@ -129,21 +129,35 @@ impl eframe::App for ViewerApp {
 
                                 }
                         });
-
+                        // Opens the Edit menu from the top bar
                         ui.menu_button("Edit", |ui| {
-                            if ui.button("(WIP)").clicked() {
+                            if ui.button("(WIP)Copy").clicked() {
+                                // code here
+                            }
+                            if ui.button("(WIP)Paste").clicked() {
                                 // code here
                             }
                         });
-
+                        ui.menu_button("View", |ui| {
+                            if ui.button("(WIP) Go To Line...").clicked() {
+                                // code here
+                            }
+                            if ui.button("(WIP) Go To First Page").clicked() {
+                                // code here
+                            }
+                            if ui.button("(WIP) Go To Last Page").clicked() {
+                                // code here
+                            }
+                        });
+                        // Opens the Data menu from the top bar
                         ui.menu_button("Data", |ui| {
-                            if ui.button("Sort").clicked() {
+                            if ui.button("(WIP )Sort...").clicked() {
                                 // code here
                             }
                         });
-
-                        ui.menu_button("Find", |ui| {
-                            if ui.button("Find Cell").clicked() {
+                        // Opens the Find menu from the top bar
+                        ui.menu_button("Navigate", |ui| {
+                            if ui.button("(WIP)Search file...").clicked() {
                                 // code here
                             }
                         });
