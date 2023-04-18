@@ -10,7 +10,7 @@ use csv::{Reader, ReaderBuilder, StringRecord};
 
 use egui::accesskit::Size;
 use egui::style::default_text_styles;
-use egui::{Align2, Context, Painter, Vec2};
+use egui::{Align2, Context, Label, Painter, Sense, Vec2};
 use egui_extras::{TableBuilder, Column};
 
 use rfd::FileDialog;
@@ -22,7 +22,7 @@ use crate::reader::*;
 struct FileInfo {
     delimiter_char: char, // unsure about string slice atm
     file_size_mb: f64,
-    total_rows: usize,
+    total_rows: u64,
     has_headers: bool,
 }
 
@@ -58,8 +58,8 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             has_file: false,
-            num_rows_to_display: 3,
-            row_pos: 4,
+            num_rows_to_display: 100,
+            row_pos: 1,
             quit_confirmation: false,
             allowed_to_quit: false,
         }
@@ -71,7 +71,6 @@ pub struct ViewerApp {
     file_info: FileInfo,
     headers: StringRecord,
     records: Vec<StringRecord>,
-    row_count: u64,
     file_path: Option<String>,
     settings: AppSettings,
 }
@@ -84,7 +83,6 @@ impl Default for ViewerApp {
             file_info: FileInfo::default(),
             headers: Default::default(),
             records: Vec::new(),
-            row_count: 0,
             file_path: None,
             settings: Default::default(),
         }
@@ -116,6 +114,8 @@ impl eframe::App for ViewerApp {
                                 self.headers = get_headers_from_file(reader.borrow_mut());
                                 self.records = get_records_file(reader.borrow_mut());
                                 self.app = AppState::Viewer;
+                                self.file_info.total_rows = get_row_count(self.file_path
+                                    .clone())
                             }
                         }
                         if ui.button("Quit").clicked() {
@@ -134,10 +134,12 @@ impl eframe::App for ViewerApp {
                             // Opens file dialogue window.
                             if ui.button("Open").clicked() {
                                 if let Some(path) = FileDialog::new().pick_file() {
-                                    self.file_path = Some(path.display().to_string());
+                                    self.file_path = Option::from(path.display().to_string());
                                     let mut reader = get_reader_from_file(self.file_path.clone());
                                     self.headers = get_headers_from_file(reader.borrow_mut());
                                     self.records = get_records_file(reader.borrow_mut());
+                                    self.file_info.total_rows = get_row_count(self.file_path
+                                        .clone())
                                 }
                             }
                             // Export Changes to file
@@ -151,8 +153,7 @@ impl eframe::App for ViewerApp {
                             if ui.button("Quit").clicked() {
                                 // Quit Confirmation Dialogue
                                 self.settings.quit_confirmation = true;
-
-                                }
+                            }
                         });
                         // Opens the Edit menu from the top bar
                         ui.menu_button("Edit", |ui| {
@@ -190,45 +191,82 @@ impl eframe::App for ViewerApp {
                                                                     self.settings.row_pos,
                                                                     self.settings.num_rows_to_display)
                             }
-                            if ui.button("Previous Page").clicked() {
-
-                            }
+                            if ui.button("Previous Page").clicked() {}
                         });
                     });
                 });
 
                 // Central Panel. Displays the Cells.
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    // Table Builder
-                    TableBuilder::new(ui)
-                        .striped(true) // Eventually needs to be a struct parameter
-                        .resizable(true) // Eventually needs to be a struct parameter
-                        .columns(Column::auto().resizable(true), self.headers.len())
-                        .column(Column::remainder())
-                        .header(20.0, |mut header| {
-                            header.col(|ui| {
-                                ui.heading(format!(" "));
-                            });
-                            for record in self.headers.iter() {
-                                header.col(|ui| {
-                                    ui.heading(format!("{}", record));
-                                });
-                            }
-                        })
-                        .body(|mut body| {
-                            for (line, record) in self.records.iter().enumerate() {
-                                body.row(30.0, |mut row| {
-                                    row.col(|ui| {
-                                        ui.label(format!("{}", line));
+                    egui::ScrollArea::horizontal().always_show_scroll(true).stick_to_bottom(true).show(ui, |ui| {
+                        use egui_extras::{Size, StripBuilder};
+                        StripBuilder::new(ui)
+                            .size(Size::remainder().at_least(100.0)) // for the table
+                            .size(Size::exact(10.0)) // for the source code link
+                            .vertical(|mut strip| {
+                                strip.cell(|ui| {
+                                    egui::ScrollArea::horizontal().show(ui, |ui| {
+
+                                        // Table Builder
+                                        TableBuilder::new(ui).max_scroll_height(f32::INFINITY)
+                                            .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                                            .striped(true) // Eventually needs to be a struct parameter
+                                            .resizable(true) // Eventually needs to be a struct parameter
+                                            .columns(Column::auto().resizable(true), self.headers.len())
+                                            .column(Column::remainder())
+                                            .header(20.0, |mut header| {
+                                                header.col(|ui| {
+                                                    if ui.add(egui::Label::new("Row").sense(Sense::click())).clicked() {
+                                                        egui::Window::new("Clicked Row")
+                                                            .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
+                                                            .collapsible(false)
+                                                            .resizable(false)
+                                                            .show(ctx, |ui| {
+                                                                ui.label("Clicked Header: Row");
+                                                            });
+                                                    }
+                                                });
+                                                for record in self.headers.iter() {
+                                                    header.col(|ui| {
+                                                        if ui.add(egui::Label::new(format!("{}", record)).sense(Sense::click())).clicked()  {
+                                                            egui::Window::new("Clicked header")
+                                                                .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
+                                                                .collapsible(false)
+                                                                .resizable(false)
+                                                                .show(ctx, |ui| {
+                                                                    ui.label(format!("Clicked Header: {}", record));
+                                                                });
+                                                        };
+                                                    });
+                                                }
+                                            })
+                                            .body(|mut body| {
+                                                for (line, record) in self.records.iter().enumerate() {
+                                                    body.row(30.0, |mut row| {
+                                                        // display row number
+                                                        row.col(|ui| {
+                                                            ui.label(format!("{}", line+1));
+                                                        });
+                                                        for column in record {
+                                                            row.col(|ui| {
+                                                                ui.label(format!("{}", column));
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            });
                                     });
-                                    for column in record {
-                                        row.col(|ui| {
-                                            ui.label(format!("{}", column));
-                                        });
-                                    }
                                 });
-                            }
+                                // strip to separate the table from the bottom panel
+                                strip.cell(|ui| {});
+                            });
+                    });
+                    egui::TopBottomPanel::bottom("bottom_panel").show_separator_line(true).show(ctx, |ui| {
+                        ui.horizontal_centered(|ui| {
+                            ui.label(format!("Total Rows: {}", self.file_info.total_rows));
+                            egui::warn_if_debug_build(ui);
                         });
+                    });
                 });
             }
             AppState::Finder => {}
@@ -289,11 +327,9 @@ pub fn run_app() -> eframe::Result<()> {
             file_info: Default::default(),
             headers: get_headers_stdin(reader.borrow_mut()),
             records: get_records_stdin(reader.borrow_mut()),
-            row_count: 0,
             file_path: None,
             settings: Default::default(),
         };
-        let mut reader = Reader::from_path("uspop.csv");
     }
 
     let native_options = eframe::NativeOptions::default();

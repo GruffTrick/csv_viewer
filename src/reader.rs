@@ -77,32 +77,37 @@ pub fn get_records_stdin(reader: &mut Reader<Stdin>) -> Vec<StringRecord> {
 
 
 
-fn get_row_count(file_path: String) -> usize {
-    let mut number_of_rows: usize = 0;
-    let mut file_size: usize = 0;
-    let file = File::open(file_path.clone()).expect(&*format!("No file found at filepath: {}",
-                                                      file_path.clone()));
+pub fn get_row_count(file_path: Option<String>) -> u64 {
+    let mut number_of_rows: u64 = 0;
+
+    let mut record = StringRecord::new();
 
     // Wrap the file in a buffered reader
-    let mut reader = BufReader::new(file);
-
-    // Create a buffer to hold the data
-    let mut buffer = String::new();
+    let mut reader = get_reader_from_file(file_path);
 
     loop {
-        match reader.read_line(&mut buffer) {
-            Ok(0) => break, // end of file
+        // match reader.read_line(&mut buffer) {
+        //     Ok(0) => break, // end of file
+        //     Ok(_) => {
+        //         // Process the data in the buffer
+        //         // ...
+        //         println!("Row: {}, Content: {}", number_of_rows +1, buffer);
+        //         number_of_rows = number_of_rows + 1;
+        //         buffer.clear(); // clear the buffer for the next chunk
+        //     }
+        //     Err(e) => print!("Error") // handle the error
+        // }
+        match reader.read_record(&mut record) {
+            Ok(false) => break, // end of file
             Ok(_) => {
                 // Process the data in the buffer
-                // ...
-                println!("Row: {}, Content: {}", number_of_rows +1, buffer);
+                println!("{:?}", record.clone());
                 number_of_rows = number_of_rows + 1;
-                buffer.clear(); // clear the buffer for the next chunk
             }
-            Err(e) => print!("Error") // handle the error
+            Err(e) => println!("Error Reading Rows"), // handle the error
         }
     }
-    number_of_rows +1
+    number_of_rows
 }
 
 fn get_file_size_mb(file_path: String) -> f64 {
@@ -121,10 +126,6 @@ pub fn get_records_from_pos(file_path: Option<String>, pos: u64, num_of_rows_to_
 
     // Wrap the file in a buffered reader
     let mut reader = get_reader_from_file(file_path);
-    let mut position = Position::new();
-    position.set_line(pos);
-    position.set_record(pos);
-    println!("{:?}", position);
 
     for row in 1..pos {
         match reader.read_record(&mut record) {
