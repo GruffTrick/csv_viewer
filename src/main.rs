@@ -6,7 +6,7 @@ use std::vec::IntoIter;
 use std::fs::File;
 use std::io::{BufRead, Stdin};
 
-use csv::{Reader, StringRecord};
+use csv::{Reader, ReaderBuilder, StringRecord};
 
 use egui::accesskit::Size;
 use egui::style::default_text_styles;
@@ -19,11 +19,27 @@ use atty;
 
 use crate::reader::*;
 
+struct FileInfo {
+    delimiter_char: char, // unsure about string slice atm
+    file_size_mb: f64,
+    total_rows: usize,
+    has_headers: bool,
+}
 
-pub const MAX_NUM_ROWS: i32 = 1000;
-pub const MAX_NUM_COLUMNS: i32 = 1000;
+impl Default for FileInfo {
+    fn default() -> Self {
+        Self {
+            delimiter_char: ',',
+            file_size_mb: 0.0,
+            total_rows: 0,
+            has_headers: true,
+        }
 
-enum AppType {
+    }
+}
+
+
+enum AppState {
     MainMenu,
     Viewer,
     Finder,
@@ -31,7 +47,9 @@ enum AppType {
 }
 
 pub struct AppSettings {
-    num_rows: usize,
+    has_file: bool,
+    num_rows_to_display: u64,
+    row_pos: u64,
     quit_confirmation: bool,
     allowed_to_quit: bool,
 }
@@ -39,7 +57,9 @@ pub struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            num_rows: 100,
+            has_file: false,
+            num_rows_to_display: 3,
+            row_pos: 4,
             quit_confirmation: false,
             allowed_to_quit: false,
         }
@@ -47,9 +67,11 @@ impl Default for AppSettings {
 }
 
 pub struct ViewerApp {
-    app: AppType,
+    app: AppState,
+    file_info: FileInfo,
     headers: StringRecord,
     records: Vec<StringRecord>,
+    row_count: u64,
     file_path: Option<String>,
     settings: AppSettings,
 }
@@ -58,9 +80,11 @@ pub struct ViewerApp {
 impl Default for ViewerApp {
     fn default() -> Self {
         Self {
-            app: AppType::MainMenu,
+            app: AppState::MainMenu,
+            file_info: FileInfo::default(),
             headers: Default::default(),
             records: Vec::new(),
+            row_count: 0,
             file_path: None,
             settings: Default::default(),
         }
@@ -80,17 +104,18 @@ impl eframe::App for ViewerApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
 
         match self.app {
-            AppType::MainMenu => {
+            AppState::MainMenu => {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         if ui.button("Open File").clicked() {
                             // Open From File
                             if let Some(path) = FileDialog::new().pick_file() {
+                                self.file_path = Option::from(path.display().to_string());
                                 let file_path = Some(path.display().to_string());
-                                let mut reader: Reader<File> = get_reader_file(file_path.clone());
-                                self.headers = get_headers_file(reader.borrow_mut());
+                                let mut reader: Reader<File> = get_reader_from_file(file_path.clone());
+                                self.headers = get_headers_from_file(reader.borrow_mut());
                                 self.records = get_records_file(reader.borrow_mut());
-                                self.app = AppType::Viewer;
+                                self.app = AppState::Viewer;
                             }
                         }
                         if ui.button("Quit").clicked() {
@@ -100,7 +125,7 @@ impl eframe::App for ViewerApp {
                     egui::warn_if_debug_build(ui);
                 });
             }
-            AppType::Viewer => {
+            AppState::Viewer => {
                 egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
                     // top panel for a menu bar:
                     egui::menu::bar(ui, |ui| {
@@ -110,8 +135,8 @@ impl eframe::App for ViewerApp {
                             if ui.button("Open").clicked() {
                                 if let Some(path) = FileDialog::new().pick_file() {
                                     self.file_path = Some(path.display().to_string());
-                                    let mut reader = get_reader_file(self.file_path.clone());
-                                    self.headers = get_headers_file(reader.borrow_mut());
+                                    let mut reader = get_reader_from_file(self.file_path.clone());
+                                    self.headers = get_headers_from_file(reader.borrow_mut());
                                     self.records = get_records_file(reader.borrow_mut());
                                 }
                             }
@@ -121,7 +146,7 @@ impl eframe::App for ViewerApp {
                             }
                             // Closes the frame and ends the application.
                             if ui.button("Close").clicked() {
-                                self.app = AppType::MainMenu;
+                                self.app = AppState::MainMenu;
                             }
                             if ui.button("Quit").clicked() {
                                 // Quit Confirmation Dialogue
@@ -160,6 +185,14 @@ impl eframe::App for ViewerApp {
                             if ui.button("(WIP)Search file...").clicked() {
                                 // code here
                             }
+                            if ui.button("Next Page").clicked() {
+                                self.records = get_records_from_pos(self.file_path.clone(),
+                                                                    self.settings.row_pos,
+                                                                    self.settings.num_rows_to_display)
+                            }
+                            if ui.button("Previous Page").clicked() {
+
+                            }
                         });
                     });
                 });
@@ -170,9 +203,12 @@ impl eframe::App for ViewerApp {
                     TableBuilder::new(ui)
                         .striped(true) // Eventually needs to be a struct parameter
                         .resizable(true) // Eventually needs to be a struct parameter
-                        .columns(Column::auto().resizable(true), self.headers.len() - 1)
+                        .columns(Column::auto().resizable(true), self.headers.len())
                         .column(Column::remainder())
                         .header(20.0, |mut header| {
+                            header.col(|ui| {
+                                ui.heading(format!(" "));
+                            });
                             for record in self.headers.iter() {
                                 header.col(|ui| {
                                     ui.heading(format!("{}", record));
@@ -182,6 +218,9 @@ impl eframe::App for ViewerApp {
                         .body(|mut body| {
                             for (line, record) in self.records.iter().enumerate() {
                                 body.row(30.0, |mut row| {
+                                    row.col(|ui| {
+                                        ui.label(format!("{}", line));
+                                    });
                                     for column in record {
                                         row.col(|ui| {
                                             ui.label(format!("{}", column));
@@ -190,12 +229,10 @@ impl eframe::App for ViewerApp {
                                 });
                             }
                         });
-
-
                 });
             }
-            AppType::Finder => {}
-            AppType::Sorter => {}
+            AppState::Finder => {}
+            AppState::Sorter => {}
         }
 
         if self.settings.quit_confirmation {
@@ -216,6 +253,7 @@ impl eframe::App for ViewerApp {
                     });
                 });
         }
+
         // Bottom panel for displaying contextual info like the debug identifier and coordinates.
         // CURRENTLY OBFUSCATES THE BOTTOM SCROLL BAR!!
         // egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
@@ -228,7 +266,7 @@ impl eframe::App for ViewerApp {
         self.settings.allowed_to_quit
     }
 
-    // Called by the frame work to save current state before shutdown.
+    // save current state before shutdown. EXPERIMENTAL ATM
     // fn save(&mut self, storage: &mut dyn eframe::Storage) {
     //     eframe::set_value(storage, eframe::APP_KEY, self);
     // }
@@ -247,12 +285,15 @@ pub fn run_app() -> eframe::Result<()> {
         // let headers = get_headers_stdin(reader.borrow_mut());
         // let records = get_records_stdin(reader.borrow_mut());
         viewer_app = ViewerApp {
-            app: AppType::Viewer,
+            app: AppState::Viewer,
+            file_info: Default::default(),
             headers: get_headers_stdin(reader.borrow_mut()),
             records: get_records_stdin(reader.borrow_mut()),
+            row_count: 0,
             file_path: None,
             settings: Default::default(),
         };
+        let mut reader = Reader::from_path("uspop.csv");
     }
 
     let native_options = eframe::NativeOptions::default();
@@ -266,7 +307,6 @@ pub fn run_app() -> eframe::Result<()> {
 
 fn main() {
 
-
-    run_app().expect("TODO: panic message");
+    run_app().expect("Runtime Error");
 
 }

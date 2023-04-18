@@ -1,13 +1,15 @@
 use std::borrow::{Borrow, BorrowMut};
+use std::fs;
 use std::fs::{File, read};
-use std::io::{Stdin,BufReader};
+use std::io::{Stdin, BufReader, BufRead, Seek};
 use std::path::Path;
 use std::error::Error;
 use std::io;
 use std::mem::size_of_val;
-use csv::{Reader, StringRecord};
+use csv::{Position, Reader, StringRecord};
 
 const MAX_BUF_SIZE: usize = 1_000_000;
+
 
 /// Returns a reader object from stdin input
 pub fn get_reader_stdin() -> Reader<io::Stdin> {
@@ -16,14 +18,14 @@ pub fn get_reader_stdin() -> Reader<io::Stdin> {
 }
 
 /// Returns a reader object from a File path
-pub fn get_reader_file(p: Option<String>) -> Reader<File> {
-    let mut p = p.unwrap();
+pub fn get_reader_from_file(p: Option<String>) -> Reader<File> {
+    let p = p.unwrap();
     let mut reader = Reader::from_path(p);
     reader.unwrap()
 }
 
 /// Extracts and returns the headers from a file-read reader object
-pub fn get_headers_file(reader: &mut Reader<File>) -> StringRecord {
+pub fn get_headers_from_file(reader: &mut Reader<File>) -> StringRecord {
     let mut reader = reader;
 
     let headers = reader.headers().cloned().expect("Panic: No Headers");
@@ -72,33 +74,79 @@ pub fn get_records_stdin(reader: &mut Reader<Stdin>) -> Vec<StringRecord> {
     records
 }
 
-// fn _get_buf_reader(file_path: String) -> BufReader<File>{
-//     let file = File::open(file_path)?;
-//     let mut reader = BufReader::new(file);
-//
-//     reader
-// }
 
 
-/// Reads the next chunk of records to the buffer.
-fn _read_next_buf() {
 
-    // Implementation here
+fn get_row_count(file_path: String) -> usize {
+    let mut number_of_rows: usize = 0;
+    let mut file_size: usize = 0;
+    let file = File::open(file_path.clone()).expect(&*format!("No file found at filepath: {}",
+                                                      file_path.clone()));
 
+    // Wrap the file in a buffered reader
+    let mut reader = BufReader::new(file);
+
+    // Create a buffer to hold the data
+    let mut buffer = String::new();
+
+    loop {
+        match reader.read_line(&mut buffer) {
+            Ok(0) => break, // end of file
+            Ok(_) => {
+                // Process the data in the buffer
+                // ...
+                println!("Row: {}, Content: {}", number_of_rows +1, buffer);
+                number_of_rows = number_of_rows + 1;
+                buffer.clear(); // clear the buffer for the next chunk
+            }
+            Err(e) => print!("Error") // handle the error
+        }
+    }
+    number_of_rows +1
 }
 
-
-/// Convert buffer to a Vector of StringRecord type
-/// return the String Records.
-fn _convert_to_string_record() {
-
-    // Implementation Here
-
+fn get_file_size_mb(file_path: String) -> f64 {
+    let metadata = fs::metadata(file_path).unwrap();
+    let size_in_bytes = metadata.len();
+    let size_in_mb = size_in_bytes as f64 / (1024.0 * 1024.0);
+    // println!("Size of file: {:.2} MB", size_in_mb);
+    size_in_mb
 }
 
+/// Builds a vector of String Records by reading a buffer of pre-determined size
+/// from the referenced file path.
+pub fn get_records_from_pos(file_path: Option<String>, pos: u64, num_of_rows_to_display: u64) -> Vec<StringRecord> {
+    let mut records: Vec<StringRecord> = Vec::new();
+    let mut record = StringRecord::new();
 
-fn _buf_read_records() -> Vec<StringRecord> {
-    let mut v: Vec<StringRecord> = Vec::new();
+    // Wrap the file in a buffered reader
+    let mut reader = get_reader_from_file(file_path);
+    let mut position = Position::new();
+    position.set_line(pos);
+    position.set_record(pos);
+    println!("{:?}", position);
 
-    v
+    for row in 1..pos {
+        match reader.read_record(&mut record) {
+            Ok(false) => break,
+            Ok(_) => { println!("{:?}", record.clone()) },
+            Err(e) => println!("TODO: Error"),
+        }
+    }
+
+    // Read data from the file into the buffer
+    for row in 0..num_of_rows_to_display {
+        match reader.read_record(&mut record) {
+            Ok(false) => break, // end of file
+            Ok(_) => {
+                // Process the data in the buffer
+                println!("{:?}", record.clone());
+                records.push(record.clone())
+            }
+            Err(e) => println!("TODO: Error"), // handle the error
+        }
+    }
+
+    records
 }
+
