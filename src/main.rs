@@ -49,7 +49,7 @@ enum AppState {
 pub struct AppSettings {
     has_file: bool,
     num_rows_to_display: u64,
-    row_pos: u64,
+    current_pos: u64,
     quit_confirmation: bool,
     allowed_to_quit: bool,
 }
@@ -59,7 +59,7 @@ impl Default for AppSettings {
         Self {
             has_file: false,
             num_rows_to_display: 100,
-            row_pos: 1,
+            current_pos: 0,
             quit_confirmation: false,
             allowed_to_quit: false,
         }
@@ -109,19 +109,25 @@ impl eframe::App for ViewerApp {
                             // Open From File
                             if let Some(path) = FileDialog::new().pick_file() {
                                 self.file_path = Option::from(path.display().to_string());
-                                let file_path = Some(path.display().to_string());
-                                let mut reader: Reader<File> = get_reader_from_file(file_path.clone());
-                                self.headers = get_headers_from_file(reader.borrow_mut());
-                                self.records = get_records_file(reader.borrow_mut());
-                                self.app = AppState::Viewer;
                                 self.file_info.total_rows = get_row_count(self.file_path
-                                    .clone())
+                                    .clone());
+                                let mut reader: Reader<File> = get_reader_from_file(self.file_path.clone());
+                                self.headers = get_headers_from_file(reader.borrow_mut());
+                                // self.records = get_records_file(reader.borrow_mut());
+                                self.records = get_records_from_pos(self.file_path.clone(), self.settings.current_pos.clone(), self.settings.num_rows_to_display);
+                                self.app = AppState::Viewer;
+
                             }
                         }
                         if ui.button("Quit").clicked() {
                             frame.close();
                         }
                     });
+                    ui.add(
+                        egui::Slider::new(&mut self.settings.num_rows_to_display, 10..=1000)
+                            .logarithmic(true)
+                            .text("Num rows"),
+                    );
                     egui::warn_if_debug_build(ui);
                 });
             }
@@ -134,12 +140,16 @@ impl eframe::App for ViewerApp {
                             // Opens file dialogue window.
                             if ui.button("Open").clicked() {
                                 if let Some(path) = FileDialog::new().pick_file() {
+                                    self.settings.current_pos = 0;
                                     self.file_path = Option::from(path.display().to_string());
-                                    let mut reader = get_reader_from_file(self.file_path.clone());
-                                    self.headers = get_headers_from_file(reader.borrow_mut());
-                                    self.records = get_records_file(reader.borrow_mut());
                                     self.file_info.total_rows = get_row_count(self.file_path
-                                        .clone())
+                                        .clone());
+                                    let mut reader: Reader<File> = get_reader_from_file(self.file_path.clone());
+                                    self.headers = get_headers_from_file(reader.borrow_mut());
+                                    // self.records = get_records_file(reader.borrow_mut());
+                                    self.records = get_records_from_pos(self.file_path.clone(), self.settings.current_pos.clone(), self.settings.num_rows_to_display);
+                                    self.app = AppState::Viewer;
+
                                 }
                             }
                             // Export Changes to file
@@ -164,17 +174,6 @@ impl eframe::App for ViewerApp {
                                 // code here
                             }
                         });
-                        ui.menu_button("View", |ui| {
-                            if ui.button("(WIP) Go To Line...").clicked() {
-                                // code here
-                            }
-                            if ui.button("(WIP) Go To First Page").clicked() {
-                                // code here
-                            }
-                            if ui.button("(WIP) Go To Last Page").clicked() {
-                                // code here
-                            }
-                        });
                         // Opens the Data menu from the top bar
                         ui.menu_button("Data", |ui| {
                             if ui.button("(WIP )Sort...").clicked() {
@@ -183,15 +182,34 @@ impl eframe::App for ViewerApp {
                         });
                         // Opens the Find menu from the top bar
                         ui.menu_button("Navigate", |ui| {
+                            if ui.button("(WIP) Go To Line...").clicked() {
+                                // code here
+                            }
                             if ui.button("(WIP)Search file...").clicked() {
                                 // code here
                             }
                             if ui.button("Next Page").clicked() {
-                                self.records = get_records_from_pos(self.file_path.clone(),
-                                                                    self.settings.row_pos,
-                                                                    self.settings.num_rows_to_display)
+                                if self.settings.current_pos + self.settings.num_rows_to_display < self.file_info.total_rows {
+                                    self.records = get_records_from_pos(
+                                        self.file_path.clone(),
+                                        self.settings.current_pos.clone() + self.settings.num_rows_to_display,
+                                        self.settings.num_rows_to_display.clone());
+                                    let mut count = 0;
+                                    for _record in self.records.clone() { count = count + 1; }
+                                    self.settings.current_pos = self.settings.current_pos + count;
+                                } else {
+                                    // While loop with confirmation dialogue box
+                                }
                             }
-                            if ui.button("Previous Page").clicked() {}
+                            if ui.button("Previous Page").clicked() {
+
+                            }
+                            if ui.button("(WIP) Go To First Page").clicked() {
+                                // code here
+                            }
+                            if ui.button("(WIP) Go To Last Page").clicked() {
+                                // code here
+                            }
                         });
                     });
                 });
@@ -245,7 +263,7 @@ impl eframe::App for ViewerApp {
                                                     body.row(30.0, |mut row| {
                                                         // display row number
                                                         row.col(|ui| {
-                                                            ui.label(format!("{}", line+1));
+                                                            ui.label(format!("{}", self.settings.current_pos.clone() + line as u64));
                                                         });
                                                         for column in record {
                                                             row.col(|ui| {
@@ -283,7 +301,6 @@ impl eframe::App for ViewerApp {
                         if ui.button("Cancel").clicked() {
                             self.settings.quit_confirmation = false;
                         }
-
                         if ui.button("Yes!").clicked() {
                             self.settings.allowed_to_quit = true;
                             frame.close();
