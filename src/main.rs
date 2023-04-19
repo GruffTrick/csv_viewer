@@ -202,7 +202,9 @@ impl eframe::App for ViewerApp {
                                 }
                             }
                             if ui.button("Previous Page").clicked() {
-
+                                // Shows previous page
+                                // go back NUM_ROWS_TO_DISPLAY,
+                                // unless ( pos - display ) < 0
                             }
                             if ui.button("(WIP) Go To First Page").clicked() {
                                 // code here
