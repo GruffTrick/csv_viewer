@@ -52,6 +52,7 @@ pub struct AppSettings {
     current_pos: u64,
     quit_confirmation: bool,
     allowed_to_quit: bool,
+    dialog_no_more_content: bool,
 }
 
 impl Default for AppSettings {
@@ -62,6 +63,7 @@ impl Default for AppSettings {
             current_pos: 0,
             quit_confirmation: false,
             allowed_to_quit: false,
+            dialog_no_more_content: false,
         }
     }
 }
@@ -104,31 +106,36 @@ impl eframe::App for ViewerApp {
         match self.app {
             AppState::MainMenu => {
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.horizontal(|ui| {
-                        if ui.button("Open File").clicked() {
-                            // Open From File
-                            if let Some(path) = FileDialog::new().pick_file() {
-                                self.file_path = Option::from(path.display().to_string());
-                                self.file_info.total_rows = get_row_count(self.file_path
-                                    .clone());
-                                let mut reader: Reader<File> = get_reader_from_file(self.file_path.clone());
-                                self.headers = get_headers_from_file(reader.borrow_mut());
-                                // self.records = get_records_file(reader.borrow_mut());
-                                self.records = get_records_from_pos(self.file_path.clone(), self.settings.current_pos.clone(), self.settings.num_rows_to_display);
-                                self.app = AppState::Viewer;
-
-                            }
-                        }
-                        if ui.button("Quit").clicked() {
-                            frame.close();
-                        }
-                    });
-                    ui.add(
-                        egui::Slider::new(&mut self.settings.num_rows_to_display, 10..=1000)
-                            .logarithmic(true)
-                            .text("Num rows"),
-                    );
-                    egui::warn_if_debug_build(ui);
+                    egui::Window::new("Main Menu")
+                        .collapsible(false)
+                        .resizable(false)
+                        .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
+                        .show(ctx, |ui| {
+                            ui.horizontal(|ui| {
+                                if ui.button("Open File").clicked() {
+                                    // Open From File
+                                    if let Some(path) = FileDialog::new().pick_file() {
+                                        self.file_path = Option::from(path.display().to_string());
+                                        self.file_info.total_rows = get_row_count(self.file_path
+                                            .clone());
+                                        let mut reader: Reader<File> = get_reader_from_file(self.file_path.clone());
+                                        self.headers = get_headers_from_file(reader.borrow_mut());
+                                        // self.records = get_records_file(reader.borrow_mut());
+                                        self.records = get_records_from_pos(self.file_path.clone(), self.settings.current_pos.clone(), self.settings.num_rows_to_display);
+                                        self.app = AppState::Viewer;
+                                    }
+                                }
+                                if ui.button("Quit").clicked() {
+                                    frame.close();
+                                }
+                            });
+                            ui.add(
+                                egui::Slider::new(&mut self.settings.num_rows_to_display, 10..=1000)
+                                    .logarithmic(true)
+                                    .text("Max Rows to Display"),
+                            );
+                            egui::warn_if_debug_build(ui);
+                        });
                 });
             }
             AppState::Viewer => {
@@ -198,7 +205,7 @@ impl eframe::App for ViewerApp {
                                     for _record in self.records.clone() { count = count + 1; }
                                     self.settings.current_pos = self.settings.current_pos + count;
                                 } else {
-                                    // While loop with confirmation dialogue box
+                                    self.settings.dialog_no_more_content = true;
                                 }
                             }
                             if ui.button("Previous Page").clicked() {
@@ -207,10 +214,22 @@ impl eframe::App for ViewerApp {
                                 // unless ( pos - display ) < 0
                             }
                             if ui.button("(WIP) Go To First Page").clicked() {
-                                // code here
+                                self.settings.current_pos = 0;
+                                self.records = get_records_from_pos(
+                                    self.file_path.clone(),
+                                    self.settings.current_pos.clone() + self.settings.num_rows_to_display,
+                                    self.settings.num_rows_to_display.clone());
                             }
                             if ui.button("(WIP) Go To Last Page").clicked() {
-                                // code here
+                                if self.file_info.total_rows > self.settings.num_rows_to_display {
+                                    self.settings.current_pos = self.file_info.total_rows - self.settings.num_rows_to_display;
+                                    self.records = get_records_from_pos(
+                                        self.file_path.clone(),
+                                        self.settings.current_pos,
+                                        self.settings.num_rows_to_display);
+                                } else {
+                                    // Dialog box here
+                                }
                             }
                         });
                     });
@@ -265,7 +284,7 @@ impl eframe::App for ViewerApp {
                                                     body.row(30.0, |mut row| {
                                                         // display row number
                                                         row.col(|ui| {
-                                                            ui.label(format!("{}", self.settings.current_pos.clone() + line as u64));
+                                                            ui.label(format!("{}", self.settings.current_pos.clone() + line as u64 + 1));
                                                         });
                                                         for column in record {
                                                             row.col(|ui| {
@@ -293,6 +312,7 @@ impl eframe::App for ViewerApp {
             AppState::Sorter => {}
         }
 
+        // Dialog Popup Windows
         if self.settings.quit_confirmation {
             egui::Window::new("Do you want to quit?")
                 .collapsible(false)
@@ -310,12 +330,20 @@ impl eframe::App for ViewerApp {
                     });
                 });
         }
+        if self.settings.dialog_no_more_content == true {
+            egui::Window::new("No more content in File")
+                .collapsible(false)
+                .resizable(false)
+                .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
+                .show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        if ui.button("Okay").clicked() {
+                            self.settings.dialog_no_more_content = false;
+                        }
+                    });
+                });
+        }
 
-        // Bottom panel for displaying contextual info like the debug identifier and coordinates.
-        // CURRENTLY OBFUSCATES THE BOTTOM SCROLL BAR!!
-        // egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-        //     egui::warn_if_debug_build(ui);
-        // });
     }
 
     fn on_close_event(&mut self) -> bool {
