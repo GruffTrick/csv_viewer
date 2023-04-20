@@ -6,7 +6,7 @@ use std::path::Path;
 use std::error::Error;
 use std::io;
 use std::mem::size_of_val;
-use csv::{Position, Reader, StringRecord};
+use csv::{Position, Reader, ReaderBuilder, StringRecord};
 
 const MAX_BUF_SIZE: usize = 1_000_000;
 
@@ -120,14 +120,23 @@ fn get_file_size_mb(file_path: String) -> f64 {
 
 /// Builds a vector of String Records by reading a buffer of pre-determined size
 /// from the referenced file path.
-pub fn get_records_from_pos(file_path: Option<String>, pos: u64, num_of_rows_to_display: u64) -> Vec<StringRecord> {
+pub fn get_records_from_pos(file_path: Option<String>, pos: u64, num_of_rows_to_display: u64, has_header: bool) -> Vec<StringRecord> {
     let mut records: Vec<StringRecord> = Vec::new();
     let mut record = StringRecord::new();
+    // let p: String = file_path.unwrap();
 
-    // Wrap the file in a buffered reader
-    let mut reader = get_reader_from_file(file_path);
+    let mut reader = csv::ReaderBuilder::new().has_headers(has_header).from_path(file_path.unwrap()).unwrap();
 
-    for row in 1..pos {
+    let mut start_pos = 0;
+    if has_header == true {
+        start_pos = 1;
+    }
+
+
+
+
+
+    for row in start_pos..pos+1 {
         match reader.read_record(&mut record) {
             Ok(false) => break,
             Ok(_) => { println!("{:?}", record.clone()) },
