@@ -15,6 +15,7 @@ use egui_extras::{TableBuilder, Column};
 
 use rfd::FileDialog;
 use atty;
+use eframe::Theme;
 use crate::Delimiter::Comma;
 
 
@@ -302,7 +303,6 @@ impl eframe::App for ViewerApp {
                             .vertical(|mut strip| {
                                 strip.cell(|ui| {
                                     egui::ScrollArea::horizontal().show(ui, |ui| {
-
                                         // Table Builder
                                         TableBuilder::new(ui).max_scroll_height(f32::INFINITY)
                                             .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
@@ -359,9 +359,9 @@ impl eframe::App for ViewerApp {
                     });
                     egui::TopBottomPanel::bottom("bottom_panel").show_separator_line(true).show(ctx, |ui| {
                         ui.horizontal_centered(|ui| {
-                            if self.file_info.has_headers {ui.label(format!("Total Rows: {}", self.file_info.total_rows.clone()-1));}
+                            if self.file_info.has_headers {ui.label(format!("Total Rows: {}", self.file_info.total_rows.clone()));}
                             else {ui.label(format!("Total Rows: {}", self.file_info.total_rows.clone()));}
-                            ui.label(format!("Top Pos: {}", self.settings.current_pos.clone()+1));
+                            ui.label(format!("Top Pos: {}", self.settings.current_pos.clone()));
                             egui::warn_if_debug_build(ui);
                         });
                     });
@@ -451,10 +451,12 @@ pub fn run_app() -> eframe::Result<()> {
         };
     }
 
-    let native_options = eframe::NativeOptions::default();
+    let mut eframe_options = eframe::NativeOptions::default();
+    eframe_options.default_theme = Theme::Light;
+
     eframe::run_native(
         "CSV Viewer",
-        native_options,
+        eframe_options,
         Box::new(|cc| Box::new(viewer_app)),
     )
 }
