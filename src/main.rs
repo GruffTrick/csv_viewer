@@ -310,12 +310,6 @@ impl eframe::App for ViewerApp {
                     });
                 });
         }
-
-        // Bottom panel for displaying contextual info like the debug identifier and coordinates.
-        // CURRENTLY OBFUSCATES THE BOTTOM SCROLL BAR!!
-        // egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-        //     egui::warn_if_debug_build(ui);
-        // });
     }
 
     fn on_close_event(&mut self) -> bool {
