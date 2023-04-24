@@ -118,6 +118,7 @@ impl eframe::App for ViewerApp {
                         .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
                         .show(ctx, |ui| {
                             ui.heading("Settings");
+                            egui::widgets::global_dark_light_mode_buttons(ui);
                             ui.add(
                                 egui::Slider::new(&mut self.settings.num_rows_to_display, 10..=1000)
                                     .logarithmic(true)
