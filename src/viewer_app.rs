@@ -16,8 +16,8 @@ use eframe::{Theme, Frame};
 use rfd::FileDialog;
 use atty;
 
-
 use crate::reader::*;
+
 
 #[derive(PartialEq,Debug)]
 enum Delimiter { Comma, Tab, Semicolon, Auto }
