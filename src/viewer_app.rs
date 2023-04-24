@@ -111,71 +111,7 @@ impl eframe::App for ViewerApp {
 
         match self.app {
             AppState::MainMenu => {
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    egui::Window::new("Main Menu")
-                        .collapsible(false)
-                        .resizable(false)
-                        .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
-                        .show(ctx, |ui| {
-                            ui.heading("Settings");
-                            egui::widgets::global_dark_light_mode_buttons(ui);
-                            ui.add(
-                                egui::Slider::new(&mut self.settings.num_rows_to_display, 10..=1000)
-                                    .logarithmic(true)
-                                    .text("Max Rows to Display"),
-                            );
-                            ui.label(format!("Has Headers: {:?}", self.file_info.has_headers.borrow()));
-                            ui.horizontal(|ui| {
-                                if ui.radio_value(&mut self.file_info.has_headers,
-                                                  true, "Yes").clicked() {}
-                                if ui.radio_value(&mut self.file_info.has_headers,
-                                                  false, "No").clicked() {}
-
-                            });
-                            ui.label(format!("Delimiter Character: {:?}", self.file_info.delimiter.borrow()));
-                            ui.horizontal(|ui| {
-                                if ui.radio_value(&mut self.file_info.delimiter,
-                                                  Delimiter::Comma, "COMMA").clicked() {
-                                    // self.file_info.delimiter = Delimiter::Comma;
-                                }
-                                if ui.radio_value(&mut self.file_info.delimiter,
-                                                  Delimiter::Tab, "TAB").clicked() {
-                                    // self.file_info.delimiter = Delimiter::Tab;
-                                }
-                                if ui.radio_value(&mut self.file_info.delimiter,
-                                                  Delimiter::Semicolon, "SEMICOLON").clicked() {
-                                    // self.file_info.delimiter = Delimiter::Semicolon;
-                                }
-                                if ui.radio_value(&mut self.file_info.delimiter,
-                                                  Delimiter::Auto, "AUTO").clicked() {
-                                    // self.file_info.delimiter = Delimiter::Auto;
-                                }
-                            });
-                            ui.separator();
-                            ui.horizontal(|ui| {
-                                if ui.button("Open File").clicked() {
-                                    // Open From File
-                                    if let Some(path) = FileDialog::new().pick_file() {
-                                        self.file_path = Option::from(path.display().to_string());
-                                        self.file_info.total_rows = get_row_count(self.file_path
-                                            .clone());
-                                        let mut reader: Reader<File> = get_reader_from_file(self.file_path.clone());
-                                        self.headers = get_headers_from_file(reader.borrow_mut());
-                                        // self.records = get_records_file(reader.borrow_mut());
-                                        self.records = get_records_from_pos(self.file_path.clone(),
-                                                                            self.settings.current_pos.clone(),
-                                                                            self.settings.num_rows_to_display,
-                                                                            self.file_info.has_headers);
-                                        self.app = AppState::Viewer;
-                                    }
-                                }
-                                if ui.button("Quit").clicked() {
-                                    frame.close();
-                                }
-                            });
-                            egui::warn_if_debug_build(ui);
-                        });
-                });
+                show_main_menu(self, ctx, frame);
             }
             AppState::Viewer => {
                 egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -403,6 +339,92 @@ impl eframe::App for ViewerApp {
     //     eframe::set_value(storage, eframe::APP_KEY, self);
     // }
 }
+
+
+fn show_main_menu (app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::Frame){
+    egui::CentralPanel::default().show(ctx, |ui| {
+        egui::Window::new("Main Menu")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
+            .show(ctx, |ui| {
+                ui.heading("Settings");
+                egui::widgets::global_dark_light_mode_buttons(ui);
+                ui.add(
+                    egui::Slider::new(&mut app.settings.num_rows_to_display, 10..=1000)
+                        .logarithmic(true)
+                        .text("Max Rows to Display"),
+                );
+                ui.label(format!("Has Headers: {:?}", app.file_info.has_headers.borrow()));
+                ui.horizontal(|ui| {
+                    if ui.radio_value(&mut app.file_info.has_headers,
+                                      true, "Yes").clicked() {}
+                    if ui.radio_value(&mut app.file_info.has_headers,
+                                      false, "No").clicked() {}
+
+                });
+                ui.label(format!("Delimiter Character: {:?}", app.file_info.delimiter.borrow()));
+                ui.horizontal(|ui| {
+                    if ui.radio_value(&mut app.file_info.delimiter,
+                                      Delimiter::Comma, "COMMA").clicked() {
+                        // self.file_info.delimiter = Delimiter::Comma;
+                    }
+                    if ui.radio_value(&mut app.file_info.delimiter,
+                                      Delimiter::Tab, "TAB").clicked() {
+                        // self.file_info.delimiter = Delimiter::Tab;
+                    }
+                    if ui.radio_value(&mut app.file_info.delimiter,
+                                      Delimiter::Semicolon, "SEMICOLON").clicked() {
+                        // self.file_info.delimiter = Delimiter::Semicolon;
+                    }
+                    if ui.radio_value(&mut app.file_info.delimiter,
+                                      Delimiter::Auto, "AUTO").clicked() {
+                        // self.file_info.delimiter = Delimiter::Auto;
+                    }
+                });
+                ui.separator();
+                ui.horizontal(|ui| {
+                    if ui.button("Open File").clicked() {
+                        // Open From File
+                        if let Some(path) = FileDialog::new().pick_file() {
+                            app.file_path = Option::from(path.display().to_string());
+                            app.file_info.total_rows = get_row_count(app.file_path
+                                .clone());
+                            let mut reader: Reader<File> = get_reader_from_file(app.file_path.clone());
+                            app.headers = get_headers_from_file(reader.borrow_mut());
+                            // self.records = get_records_file(reader.borrow_mut());
+                            app.records = get_records_from_pos(app.file_path.clone(),
+                                                               app.settings.current_pos.clone(),
+                                                               app.settings.num_rows_to_display,
+                                                               app.file_info.has_headers);
+                            app.app = AppState::Viewer;
+                        }
+                    }
+                    if ui.button("Quit").clicked() {
+                        frame.close();
+                    }
+                });
+                egui::warn_if_debug_build(ui);
+            });
+    });
+}
+
+fn show_viewer (app: &mut ViewerApp, ctx: & Context, text: &str) {
+
+}
+
+fn show_next_page() {
+
+}
+
+fn show_prev_page() {
+
+}
+
+fn show_line() {
+
+}
+
 
 /// Opens a dialog box within the eframe that displays passed string slice.
 /// The dialog box window remains open on top of the displayed content until the "okay" button is
