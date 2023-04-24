@@ -204,7 +204,7 @@ impl eframe::App for ViewerApp {
                                 }
                             }
                             // Export Changes to file
-                            if ui.button("(WIP)Export to...").clicked() {
+                            if ui.button("(TBA)Export to...").clicked() {
                                 // code here
                             }
                             // Closes the frame and ends the application.
@@ -223,25 +223,25 @@ impl eframe::App for ViewerApp {
                         });
                         // Opens the Edit menu from the top bar
                         ui.menu_button("Edit", |ui| {
-                            if ui.button("(WIP)Copy").clicked() {
+                            if ui.button("(TBA)Copy").clicked() {
                                 // code here
                             }
-                            if ui.button("(WIP)Paste").clicked() {
+                            if ui.button("(TBA)Paste").clicked() {
                                 // code here
                             }
                         });
                         // Opens the Data menu from the top bar
                         ui.menu_button("Data", |ui| {
-                            if ui.button("(WIP )Sort...").clicked() {
+                            if ui.button("(TBA)Sort...").clicked() {
                                 // code here
                             }
                         });
                         // Opens the Find menu from the top bar
                         ui.menu_button("Navigate", |ui| {
-                            if ui.button("(WIP) Go To Line...").clicked() {
+                            if ui.button("(TBA) Go To Line...").clicked() {
                                 // code here
                             }
-                            if ui.button("(WIP)Search file...").clicked() {
+                            if ui.button("(TBA)Find...").clicked() {
                                 // code here
                             }
                             if ui.button("Next Page").clicked() {
@@ -254,7 +254,7 @@ impl eframe::App for ViewerApp {
                                     if (self.settings.current_pos + self.settings.num_rows_to_display) > self.file_info.total_rows {
 
                                     }
-                                } else {
+                                } else /* No more content in file */ {
                                     self.settings.dialog_msg = DialogMessage::NextPage;
                                     self.settings.dialog_open = true;
                                 }
@@ -385,11 +385,13 @@ impl eframe::App for ViewerApp {
 
         // Checks if a dialog box with a required confirmation to close is set to open
         if self.settings.dialog_open == true {
+            let mut dialog_msg: &str = "";
             match self.settings.dialog_msg {
-                DialogMessage::None => { show_dialog_confirmation(self, ctx, "Error: No Dialog Message");}
-                DialogMessage::NextPage => { show_dialog_confirmation(self, ctx, "Already on Last Page");}
-                DialogMessage::PreviousPage => { show_dialog_confirmation(self, ctx, "Already on First Page");}
+                DialogMessage::None => { dialog_msg = "Error: No Dialog Message";}
+                DialogMessage::NextPage => { dialog_msg = "Already on Last Page";}
+                DialogMessage::PreviousPage => { dialog_msg = "Already on First Page";}
             }
+            show_dialog_confirmation(self, ctx, dialog_msg);
         }
 
     }
@@ -418,6 +420,7 @@ fn show_dialog_confirmation(app: &mut ViewerApp, ctx: & Context, text: &str) {
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if ui.button("Okay").clicked() {
+                    app.settings.dialog_msg = DialogMessage::None;
                     app.settings.dialog_open = false;
                 }
             });
