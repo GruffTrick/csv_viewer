@@ -103,12 +103,6 @@ impl Default for ViewerApp {
     }
 }
 
-impl ViewerApp {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        Default::default()
-    }
-}
-
 
 impl eframe::App for ViewerApp {
     /// Called each time the UI needs to be repainted
