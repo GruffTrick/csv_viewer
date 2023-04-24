@@ -9,12 +9,12 @@ use csv::{Reader, ReaderBuilder, StringRecord};
 
 use egui::accesskit::Size;
 use egui::style::default_text_styles;
-use egui::{Align2, Context, Label, Painter, Response, Sense, Vec2};
+use egui::{Align2, Context, Label, Painter, Response, Sense, Ui, Vec2};
 use egui_extras::{TableBuilder, Column};
 
 use rfd::FileDialog;
 use atty;
-use eframe::Theme;
+use eframe::{Theme, Frame};
 
 
 use crate::reader::*;
@@ -49,14 +49,21 @@ enum AppState {
     Sorter,
 }
 
+#[derive(PartialEq,Debug)]
+enum DialogMessage {
+    None,
+    NextPage,
+    PreviousPage,
+}
+
 pub struct AppSettings {
     has_file: bool,
     num_rows_to_display: u64,
     current_pos: u64,
     quit_confirmation: bool,
     allowed_to_quit: bool,
-    dialog_no_more_content: bool,
-    dialog_last_page: bool,
+    dialog_open: bool,
+    dialog_msg: DialogMessage,
 }
 
 impl Default for AppSettings {
@@ -67,8 +74,8 @@ impl Default for AppSettings {
             current_pos: 0,
             quit_confirmation: false,
             allowed_to_quit: false,
-            dialog_no_more_content: false,
-            dialog_last_page: false,
+            dialog_open: false,
+            dialog_msg: DialogMessage::None,
         }
     }
 }
@@ -248,7 +255,8 @@ impl eframe::App for ViewerApp {
 
                                     }
                                 } else {
-                                    self.settings.dialog_no_more_content = true;
+                                    self.settings.dialog_msg = DialogMessage::NextPage;
+                                    self.settings.dialog_open = true;
                                 }
                             }
                             if ui.button("Previous Page").clicked() {
@@ -284,7 +292,7 @@ impl eframe::App for ViewerApp {
                                         self.settings.current_pos.clone(),
                                         self.settings.num_rows_to_display.clone(), self.file_info.has_headers);
                                 } else {
-                                    self.settings.dialog_last_page = true;
+                                    self.settings.dialog_open = true;
                                 }
                             }
                         });
@@ -369,53 +377,25 @@ impl eframe::App for ViewerApp {
             AppState::Sorter => {}
         }
 
-        // Dialog Popup Windows
+        // If the quit confirmation setting is enabled, open the quit confirmation menu.
         if self.settings.quit_confirmation {
-            egui::Window::new("Do you want to quit?")
-                .collapsible(false)
-                .resizable(false)
-                .anchor(Align2::CENTER_CENTER, Vec2 { x: 0.0, y: 0.0 })
-                .show(ctx, |ui| {
-                    ui.horizontal(|ui| {
-                        if ui.button("Cancel").clicked() {
-                            self.settings.quit_confirmation = false;
-                        }
-                        if ui.button("Yes!").clicked() {
-                            self.settings.allowed_to_quit = true;
-                            frame.close();
-                        }
-                    });
-                });
+            show_quit_confirmation(self, ctx, frame);
         }
-        if self.settings.dialog_no_more_content == true {
-            egui::Window::new("No more content in File")
-                .collapsible(false)
-                .resizable(false)
-                .anchor(Align2::CENTER_CENTER, Vec2 { x: 0.0, y: 0.0 })
-                .show(ctx, |ui| {
-                    ui.horizontal(|ui| {
-                        if ui.button("Okay").clicked() {
-                            self.settings.dialog_no_more_content = false;
-                        }
-                    });
-                });
-        }
-        if self.settings.dialog_last_page == true {
-            egui::Window::new("Already on Last Page")
-                .collapsible(false)
-                .resizable(false)
-                .anchor(Align2::CENTER_CENTER, Vec2 { x: 0.0, y: 0.0 })
-                .show(ctx, |ui| {
-                    ui.horizontal(|ui| {
-                        if ui.button("Okay").clicked() {
-                            self.settings.dialog_last_page = false;
-                        }
-                    });
-                });
+
+
+        // Checks if a dialog box with a required confirmation to close is set to open
+        if self.settings.dialog_open == true {
+            match self.settings.dialog_msg {
+                DialogMessage::None => { show_dialog_confirmation(self, ctx, "Error: No Dialog Message");}
+                DialogMessage::NextPage => { show_dialog_confirmation(self, ctx, "Already on Last Page");}
+                DialogMessage::PreviousPage => { show_dialog_confirmation(self, ctx, "Already on First Page");}
+            }
         }
 
     }
 
+    /// If user attempts to close the app the setting for displaying a close confirmation window
+    /// is enabled.
     fn on_close_event(&mut self) -> bool {
         self.settings.quit_confirmation = true;
         self.settings.allowed_to_quit
@@ -425,6 +405,44 @@ impl eframe::App for ViewerApp {
     // fn save(&mut self, storage: &mut dyn eframe::Storage) {
     //     eframe::set_value(storage, eframe::APP_KEY, self);
     // }
+}
+
+/// Opens a dialog box within the eframe that displays passed string slice.
+/// The dialog box window remains open on top of the displayed content until the "okay" button is
+/// clicked by the user.
+fn show_dialog_confirmation(app: &mut ViewerApp, ctx: & Context, text: &str) {
+    egui::Window::new(text)
+        .collapsible(false)
+        .resizable(false)
+        .anchor(Align2::CENTER_CENTER, Vec2 { x: 0.0, y: 0.0 })
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                if ui.button("Okay").clicked() {
+                    app.settings.dialog_open = false;
+                }
+            });
+        });
+}
+
+/// Opens a dialog window that checks if the user really wants to quit the application or not.
+/// "Yes!" closes the Application.
+/// "Cancel" closes the confirmation window and returns to the previous window.
+fn show_quit_confirmation(app: &mut ViewerApp, ctx: & Context, frame: &mut Frame) {
+    egui::Window::new("Do you want to quit?")
+        .collapsible(false)
+        .resizable(false)
+        .anchor(Align2::CENTER_CENTER, Vec2 { x: 0.0, y: 0.0 })
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                if ui.button("Cancel").clicked() {
+                    app.settings.quit_confirmation = false;
+                }
+                if ui.button("Yes!").clicked() {
+                    app.settings.allowed_to_quit = true;
+                    frame.close();
+                }
+            });
+        });
 }
 
 
