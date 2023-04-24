@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use csv::StringRecord;
 
 pub fn _sort_records(v: &Vec<StringRecord>, column: usize) -> Vec<StringRecord> {
