@@ -54,6 +54,8 @@ enum DialogMessage {
     None,
     NextPage,
     PreviousPage,
+    StartOfFile,
+    EndOfFile,
 }
 
 pub struct AppSettings {
@@ -81,7 +83,7 @@ impl Default for AppSettings {
 }
 
 pub struct ViewerApp {
-    app: AppState,
+    app_state: AppState,
     file_info: FileInfo,
     headers: StringRecord,
     records: Vec<StringRecord>,
@@ -93,7 +95,7 @@ pub struct ViewerApp {
 impl Default for ViewerApp {
     fn default() -> Self {
         Self {
-            app: AppState::MainMenu,
+            app_state: AppState::MainMenu,
             file_info: FileInfo::default(),
             headers: Default::default(),
             records: Vec::new(),
@@ -109,201 +111,12 @@ impl eframe::App for ViewerApp {
     /// Widgets are placed inside of their respective panels
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
 
-        match self.app {
+        match self.app_state {
             AppState::MainMenu => {
                 show_main_menu_window(self, ctx, frame);
             }
             AppState::Viewer => {
                 show_viewer_window(self, ctx, frame);
-                // egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-                //     // top panel for a menu bar:
-                //     egui::menu::bar(ui, |ui| {
-                //         // Opens the file menu from the top bar
-                //         ui.menu_button("File", |ui| {
-                //             // Opens file dialogue window.
-                //             if ui.button("Open").clicked() {
-                //                 if let Some(path) = FileDialog::new().pick_file() {
-                //                     self.settings.current_pos = 0;
-                //                     self.file_path = Option::from(path.display().to_string());
-                //                     self.file_info.total_rows = get_row_count(self.file_path
-                //                         .clone());
-                //                     let mut reader: Reader<File> = get_reader_from_file(self.file_path.clone());
-                //                     self.headers = get_headers_from_file(reader.borrow_mut());
-                //                     // self.records = get_records_file(reader.borrow_mut());
-                //                     self.records = get_records_from_pos(self.file_path.clone(), self.settings.current_pos.clone(), self.settings.num_rows_to_display,self.file_info.has_headers);
-                //                     self.app = AppState::Viewer;
-                //
-                //                 }
-                //             }
-                //             // Export Changes to file
-                //             if ui.button("(TBA)Export to...").clicked() {
-                //                 // code here
-                //             }
-                //             // Closes the frame and ends the application.
-                //             if ui.button("Close").clicked() {
-                //                 self.headers = StringRecord::new();
-                //                 self.records = Vec::new();
-                //                 self.file_path = None;
-                //                 self.file_info = FileInfo::default();
-                //                 self.settings = AppSettings::default();
-                //                 self.app = AppState::MainMenu;
-                //             }
-                //             if ui.button("Quit").clicked() {
-                //                 // Quit Confirmation Dialogue
-                //                 self.settings.quit_confirmation = true;
-                //             }
-                //         });
-                //         // Opens the Edit menu from the top bar
-                //         ui.menu_button("Edit", |ui| {
-                //             if ui.button("(TBA)Copy").clicked() {
-                //                 // code here
-                //             }
-                //             if ui.button("(TBA)Paste").clicked() {
-                //                 // code here
-                //             }
-                //         });
-                //         // Opens the Data menu from the top bar
-                //         ui.menu_button("Data", |ui| {
-                //             if ui.button("(TBA)Sort...").clicked() {
-                //                 // code here
-                //             }
-                //         });
-                //         // Opens the Find menu from the top bar
-                //         ui.menu_button("Navigate", |ui| {
-                //             if ui.button("(TBA) Go To Line...").clicked() {
-                //                 // code here
-                //             }
-                //             if ui.button("(TBA)Find...").clicked() {
-                //                 // code here
-                //             }
-                //             if ui.button("Next Page").clicked() {
-                //                 if self.settings.current_pos + self.settings.num_rows_to_display <= self.file_info.total_rows {
-                //                     self.records = get_records_from_pos(
-                //                         self.file_path.clone(),
-                //                         self.settings.current_pos.clone() + self.settings.num_rows_to_display,
-                //                         self.settings.num_rows_to_display.clone(), self.file_info.has_headers);
-                //                     self.settings.current_pos = self.settings.current_pos + self.settings.num_rows_to_display;
-                //                     if (self.settings.current_pos + self.settings.num_rows_to_display) > self.file_info.total_rows {
-                //
-                //                     }
-                //                 } else /* No more content in file */ {
-                //                     self.settings.dialog_msg = DialogMessage::NextPage;
-                //                     self.settings.dialog_open = true;
-                //                 }
-                //             }
-                //             if ui.button("Previous Page").clicked() {
-                //                 // Shows previous page
-                //                 // go back NUM_ROWS_TO_DISPLAY,
-                //                 // unless ( pos - display ) < 0
-                //                 if self.settings.current_pos <= self.settings.num_rows_to_display {
-                //                     self.settings.current_pos = 0;
-                //                     self.records = get_records_from_pos(
-                //                         self.file_path.clone(),
-                //                         self.settings.current_pos.clone(),
-                //                         self.settings.num_rows_to_display.clone(), self.file_info.has_headers);
-                //                 } else {
-                //                     self.settings.current_pos = self.settings.current_pos - self.settings.num_rows_to_display;
-                //                     self.records = get_records_from_pos(
-                //                         self.file_path.clone(),
-                //                         self.settings.current_pos.clone(),
-                //                         self.settings.num_rows_to_display.clone(), self.file_info.has_headers);
-                //                 }
-                //             }
-                //             if ui.button("Go To Start of File").clicked() {
-                //                 self.settings.current_pos = 0;
-                //                 self.records = get_records_from_pos(
-                //                     self.file_path.clone(),
-                //                     self.settings.current_pos.clone(),
-                //                     self.settings.num_rows_to_display.clone(), self.file_info.has_headers);
-                //             }
-                //             if ui.button("Go To End of File").clicked() {
-                //                 if self.file_info.total_rows > self.settings.num_rows_to_display {
-                //                     self.settings.current_pos = self.file_info.total_rows - self.settings.num_rows_to_display;
-                //                     self.records = get_records_from_pos(
-                //                         self.file_path.clone(),
-                //                         self.settings.current_pos.clone(),
-                //                         self.settings.num_rows_to_display.clone(), self.file_info.has_headers);
-                //                 } else {
-                //                     self.settings.dialog_open = true;
-                //                 }
-                //             }
-                //         });
-                //     });
-                // });
-                //
-                // // Central Panel. Displays the Cells.
-                // egui::CentralPanel::default().show(ctx, |ui| {
-                //     egui::ScrollArea::horizontal().always_show_scroll(true).stick_to_bottom(true).show(ui, |ui| {
-                //         use egui_extras::{Size, StripBuilder};
-                //         StripBuilder::new(ui)
-                //             .size(Size::remainder().at_least(100.0)) // for the table
-                //             .size(Size::exact(10.0)) // for the source code link
-                //             .vertical(|mut strip| {
-                //                 strip.cell(|ui| {
-                //                     egui::ScrollArea::horizontal().show(ui, |ui| {
-                //                         // Table Builder
-                //                         TableBuilder::new(ui).max_scroll_height(f32::INFINITY)
-                //                             .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
-                //                             .striped(true) // Eventually needs to be a struct parameter
-                //                             .resizable(true) // Eventually needs to be a struct parameter
-                //                             .columns(Column::auto().resizable(true), self.headers.len())
-                //                             .column(Column::remainder())
-                //                             .header(20.0, |mut header| {
-                //                                 header.col(|ui| {
-                //                                     if ui.add(egui::Label::new("#").sense(Sense::click())).clicked() {
-                //                                         egui::Window::new("Clicked Row")
-                //                                             .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
-                //                                             .collapsible(false)
-                //                                             .resizable(false)
-                //                                             .show(ctx, |ui| {
-                //                                                 ui.label("Clicked Header: #");
-                //                                             });
-                //                                     }
-                //                                 });
-                //                                 for record in self.headers.iter() {
-                //                                     header.col(|ui| {
-                //                                         if ui.add(egui::Label::new(format!("{}", record)).sense(Sense::click())).clicked()  {
-                //                                             egui::Window::new("Clicked header")
-                //                                                 .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
-                //                                                 .collapsible(false)
-                //                                                 .resizable(false)
-                //                                                 .show(ctx, |ui| {
-                //                                                     ui.label(format!("Clicked Header: {}", record));
-                //                                                 });
-                //                                         };
-                //                                     });
-                //                                 }
-                //                             })
-                //                             .body(|mut body| {
-                //                                 for (line, record) in self.records.iter().enumerate() {
-                //                                     body.row(30.0, |mut row| {
-                //                                         // display row index
-                //                                         row.col(|ui| {
-                //                                             ui.label(format!("{}", self.settings.current_pos.clone() + line as u64 + 1));
-                //                                         });
-                //                                         for column in record {
-                //                                             row.col(|ui| {
-                //                                                 ui.label(format!("{}", column));
-                //                                             });
-                //                                         }
-                //                                     });
-                //                                 }
-                //                             });
-                //                     });
-                //                 });
-                //                 // strip to separate the table from the bottom panel
-                //                 strip.cell(|ui| {});
-                //             });
-                //     });
-                //     egui::TopBottomPanel::bottom("bottom_panel").show_separator_line(true).show(ctx, |ui| {
-                //         ui.horizontal_centered(|ui| {
-                //             if self.file_info.has_headers {ui.label(format!("Total Rows: {}", self.file_info.total_rows.clone()));}
-                //             else {ui.label(format!("Total Rows: {}", self.file_info.total_rows.clone()));}
-                //             ui.label(format!("Top Pos: {}", self.settings.current_pos.clone()));
-                //             egui::warn_if_debug_build(ui);
-                //         });
-                //     });
-                // });
             }
             AppState::Finder => {}
             AppState::Sorter => {}
@@ -322,6 +135,8 @@ impl eframe::App for ViewerApp {
                 DialogMessage::None => { dialog_msg = "Error: No Dialog Message";}
                 DialogMessage::NextPage => { dialog_msg = "Already on Last Page";}
                 DialogMessage::PreviousPage => { dialog_msg = "Already on First Page";}
+                DialogMessage::StartOfFile => {dialog_msg = "Already at Start of File";}
+                DialogMessage::EndOfFile => {dialog_msg = "Already at End of File";}
             }
             show_dialog_confirmation(self, ctx, dialog_msg);
         }
@@ -387,18 +202,7 @@ fn show_main_menu_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe
                 ui.horizontal(|ui| {
                     if ui.button("Open File").clicked() {
                         // Open From File
-                        if let Some(path) = FileDialog::new().pick_file() {
-                            app.file_path = Option::from(path.display().to_string());
-                            app.file_info.total_rows = get_row_count(app.file_path
-                                .clone());
-                            let mut reader: Reader<File> = get_reader_from_file(app.file_path.clone());
-                            app.headers = get_headers_from_file(reader.borrow_mut());
-                            app.records = get_records_from_pos(app.file_path.clone(),
-                                                               app.settings.current_pos.clone(),
-                                                               app.settings.num_rows_to_display,
-                                                               app.file_info.has_headers);
-                            app.app = AppState::Viewer;
-                        }
+                        open_file(app);
                     }
                     if ui.button("Quit").clicked() {
                         frame.close();
@@ -417,20 +221,7 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
             ui.menu_button("File", |ui| {
                 // Opens file dialogue window.
                 if ui.button("Open").clicked() {
-                    if let Some(path) = FileDialog::new().pick_file() {
-                        app.settings.current_pos = 0;
-                        app.file_path = Option::from(path.display().to_string());
-                        app.file_info.total_rows = get_row_count(app.file_path
-                            .clone());
-                        let mut reader: Reader<File> = get_reader_from_file(app.file_path.clone());
-                        app.headers = get_headers_from_file(reader.borrow_mut());
-                        app.records = get_records_from_pos(app.file_path.clone(),
-                                                           app.settings.current_pos.clone(),
-                                                           app.settings.num_rows_to_display,
-                                                           app.file_info.has_headers);
-                        app.app = AppState::Viewer;
-
-                    }
+                    open_file(app);
                 }
                 // Export Changes to file
                 if ui.button("(TBA)Export to...").clicked() {
@@ -443,7 +234,7 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
                     app.file_path = None;
                     app.file_info = FileInfo::default();
                     app.settings = AppSettings::default();
-                    app.app = AppState::MainMenu;
+                    app.app_state = AppState::MainMenu;
                 }
                 if ui.button("Quit").clicked() {
                     // Quit Confirmation Dialogue
@@ -473,57 +264,17 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
                 if ui.button("(TBA)Find...").clicked() {
                     // code here
                 }
+                if ui.button("Go To Start of File").clicked() {
+                    show_first_page(app);
+                }
                 if ui.button("Next Page").clicked() {
-                    if app.settings.current_pos + app.settings.num_rows_to_display <= app.file_info.total_rows {
-                        app.records = get_records_from_pos(
-                            app.file_path.clone(),
-                            app.settings.current_pos.clone() + app.settings.num_rows_to_display,
-                            app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
-                        app.settings.current_pos = app.settings.current_pos + app.settings.num_rows_to_display;
-                        if (app.settings.current_pos + app.settings.num_rows_to_display) > app.file_info.total_rows {
-
-                        }
-                    } else /* No more content in file */ {
-                        app.settings.dialog_msg = DialogMessage::NextPage;
-                        app.settings.dialog_open = true;
-                    }
+                    show_next_page(app);
                 }
                 if ui.button("Previous Page").clicked() {
-                    // Shows previous page
-                    // go back NUM_ROWS_TO_DISPLAY,
-                    // unless ( pos - display ) < 0
-                    if app.settings.current_pos <= app.settings.num_rows_to_display {
-                        app.settings.current_pos = 0;
-                        app.records = get_records_from_pos(
-                            app.file_path.clone(),
-                            app.settings.current_pos.clone(),
-                            app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
-                    } else {
-                        app.settings.current_pos = app.settings.current_pos - app.settings.num_rows_to_display;
-                        app.records = get_records_from_pos(
-                            app.file_path.clone(),
-                            app.settings.current_pos.clone(),
-                            app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
-                    }
-                }
-                if ui.button("Go To Start of File").clicked() {
-                    app.settings.current_pos = 0;
-                    app.records = get_records_from_pos(
-                        app.file_path.clone(),
-                        app.settings.current_pos.clone(),
-                        app.settings.num_rows_to_display.clone(),
-                        app.file_info.has_headers);
+                    show_prev_page(app);
                 }
                 if ui.button("Go To End of File").clicked() {
-                    if app.file_info.total_rows > app.settings.num_rows_to_display {
-                        app.settings.current_pos = app.file_info.total_rows - app.settings.num_rows_to_display;
-                        app.records = get_records_from_pos(
-                            app.file_path.clone(),
-                            app.settings.current_pos.clone(),
-                            app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
-                    } else {
-                        app.settings.dialog_open = true;
-                    }
+                    show_last_page(app);
                 }
             });
         });
@@ -531,7 +282,10 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
 
     // Central Panel. Displays the Cells.
     egui::CentralPanel::default().show(ctx, |ui| {
-        egui::ScrollArea::horizontal().always_show_scroll(true).stick_to_bottom(true).show(ui, |ui| {
+        egui::ScrollArea::horizontal()
+            .always_show_scroll(true)
+            .stick_to_bottom(true)
+            .show(ui, |ui| {
             use egui_extras::{Size, StripBuilder};
             StripBuilder::new(ui)
                 .size(Size::remainder().at_least(100.0)) // for the table
@@ -540,53 +294,7 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
                     strip.cell(|ui| {
                         egui::ScrollArea::horizontal().show(ui, |ui| {
                             // Table Builder
-                            TableBuilder::new(ui).max_scroll_height(f32::INFINITY)
-                                .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
-                                .striped(true) // Eventually needs to be a struct parameter
-                                .resizable(true) // Eventually needs to be a struct parameter
-                                .columns(Column::auto().resizable(true), app.headers.len())
-                                .column(Column::remainder())
-                                .header(20.0, |mut header| {
-                                    header.col(|ui| {
-                                        if ui.add(egui::Label::new("#").sense(Sense::click())).clicked() {
-                                            egui::Window::new("Clicked Row")
-                                                .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
-                                                .collapsible(false)
-                                                .resizable(false)
-                                                .show(ctx, |ui| {
-                                                    ui.label("Clicked Header: #");
-                                                });
-                                        }
-                                    });
-                                    for record in app.headers.iter() {
-                                        header.col(|ui| {
-                                            if ui.add(egui::Label::new(format!("{}", record)).sense(Sense::click())).clicked()  {
-                                                egui::Window::new("Clicked header")
-                                                    .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
-                                                    .collapsible(false)
-                                                    .resizable(false)
-                                                    .show(ctx, |ui| {
-                                                        ui.label(format!("Clicked Header: {}", record));
-                                                    });
-                                            };
-                                        });
-                                    }
-                                })
-                                .body(|mut body| {
-                                    for (line, record) in app.records.iter().enumerate() {
-                                        body.row(30.0, |mut row| {
-                                            // display row index
-                                            row.col(|ui| {
-                                                ui.label(format!("{}", app.settings.current_pos.clone() + line as u64 + 1));
-                                            });
-                                            for column in record {
-                                                row.col(|ui| {
-                                                    ui.label(format!("{}", column));
-                                                });
-                                            }
-                                        });
-                                    }
-                                });
+                            build_table(app, ctx, ui);
                         });
                     });
                     // strip to separate the table from the bottom panel
@@ -604,16 +312,132 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
     });
 }
 
-fn show_next_page() {
-
+fn build_table (app: &mut ViewerApp, ctx: & Context, ui: &mut Ui) {
+    TableBuilder::new(ui).max_scroll_height(f32::INFINITY)
+        .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+        .striped(true) // Eventually needs to be a struct parameter
+        .resizable(true) // Eventually needs to be a struct parameter
+        .columns(Column::auto().resizable(true), app.headers.len())
+        .column(Column::remainder())
+        .header(20.0, |mut header| {
+            header.col(|ui| {
+                if ui.add(egui::Label::new("#").sense(Sense::click())).clicked() {
+                    egui::Window::new("Clicked Row")
+                        .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
+                        .collapsible(false)
+                        .resizable(false)
+                        .show(ctx, |ui| {
+                            ui.label("Clicked Header: #");
+                        });
+                }
+            });
+            for record in app.headers.iter() {
+                header.col(|ui| {
+                    if ui.add(egui::Label::new(format!("{}", record)).sense(Sense::click())).clicked()  {
+                        egui::Window::new("Clicked header")
+                            .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
+                            .collapsible(false)
+                            .resizable(false)
+                            .show(ctx, |ui| {
+                                ui.label(format!("Clicked Header: {}", record));
+                            });
+                    };
+                });
+            }
+        })
+        .body(|mut body| {
+            for (line, record) in app.records.iter().enumerate() {
+                body.row(30.0, |mut row| {
+                    // display row index
+                    row.col(|ui| {
+                        ui.label(format!("{}", app.settings.current_pos.clone() + line as u64 + 1));
+                    });
+                    for column in record {
+                        row.col(|ui| {
+                            ui.label(format!("{}", column));
+                        });
+                    }
+                });
+            }
+        });
 }
 
-fn show_prev_page() {
+fn show_next_page(app: &mut ViewerApp) {
+    if app.settings.current_pos + app.settings.num_rows_to_display <= app.file_info.total_rows {
+        app.records = get_records_from_pos(
+            app.file_path.clone(),
+            app.settings.current_pos.clone() + app.settings.num_rows_to_display,
+            app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
+        app.settings.current_pos = app.settings.current_pos + app.settings.num_rows_to_display;
+        if (app.settings.current_pos + app.settings.num_rows_to_display) > app.file_info.total_rows {
 
+        }
+    } else /* No more content in file */ {
+        app.settings.dialog_msg = DialogMessage::NextPage;
+        app.settings.dialog_open = true;
+    }
 }
 
-fn show_line() {
+fn show_prev_page(app: &mut ViewerApp) {
+    // Shows previous page
+    // go back NUM_ROWS_TO_DISPLAY,
+    // unless ( pos - display ) < 0
+    if app.settings.current_pos <= app.settings.num_rows_to_display {
+        app.settings.current_pos = 0;
+        app.records = get_records_from_pos(
+            app.file_path.clone(),
+            app.settings.current_pos.clone(),
+            app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
+    } else {
+        app.settings.current_pos = app.settings.current_pos - app.settings.num_rows_to_display;
+        app.records = get_records_from_pos(
+            app.file_path.clone(),
+            app.settings.current_pos.clone(),
+            app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
+    }
+}
 
+fn show_first_page(app: &mut ViewerApp) {
+    if app.settings.current_pos != 0 {
+        app.settings.current_pos = 0;
+        app.records = get_records_from_pos(
+            app.file_path.clone(),
+            app.settings.current_pos.clone(),
+            app.settings.num_rows_to_display.clone(),
+            app.file_info.has_headers);
+    } else {
+        app.settings.dialog_msg = DialogMessage::StartOfFile;
+        app.settings.dialog_open = true
+    }
+}
+
+fn show_last_page(app: &mut ViewerApp) {
+    if app.file_info.total_rows > app.settings.num_rows_to_display {
+        app.settings.current_pos = app.file_info.total_rows - app.settings.num_rows_to_display;
+        app.records = get_records_from_pos(
+            app.file_path.clone(),
+            app.settings.current_pos.clone(),
+            app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
+    } else {
+        app.settings.dialog_msg = DialogMessage::EndOfFile;
+        app.settings.dialog_open = true;
+    }
+}
+
+
+fn open_file(app: &mut ViewerApp) {
+    if let Some(path) = FileDialog::new().pick_file() {
+        app.file_path = Option::from(path.display().to_string());
+        app.file_info.total_rows = get_row_count(app.file_path
+            .clone());
+        let mut reader: Reader<File> = get_reader_from_file(app.file_path.clone());
+        app.headers = get_headers_from_file(reader.borrow_mut());
+        app.records = get_records_from_pos(app.file_path.clone(),
+                                           app.settings.current_pos.clone(),
+                                           app.settings.num_rows_to_display,
+                                           app.file_info.has_headers);
+        app.app_state = AppState::Viewer;
+    }
 }
 
 
@@ -633,6 +457,11 @@ fn show_dialog_confirmation(app: &mut ViewerApp, ctx: & Context, text: &str) {
                 }
             });
         });
+}
+
+fn _initialise_app_settings(app: &mut ViewerApp) {
+    app.settings.current_pos = 0;
+
 }
 
 /// Opens a dialog window that checks if the user really wants to quit the application or not.
@@ -669,7 +498,7 @@ pub fn run_app() -> eframe::Result<()> {
         // let headers = get_headers_stdin(reader.borrow_mut());
         // let records = get_records_stdin(reader.borrow_mut());
         viewer_app = ViewerApp {
-            app: AppState::Viewer,
+            app_state: AppState::Viewer,
             file_info: Default::default(),
             headers: get_headers_stdin(reader.borrow_mut()),
             records: get_records_stdin(reader.borrow_mut()),

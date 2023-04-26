@@ -3,7 +3,6 @@
 use crate::viewer_app::*;
 
 mod viewer_app;
-mod viewer;
 mod reader;
 mod sort;
 
