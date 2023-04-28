@@ -24,8 +24,12 @@ eframe = { version = "0.21.0", default-features = false, features = [
 # Rust File Dialog
 rfd = "0.11.1"
 
-# You only need serde if you want app persistence:
+# Serialising and Deserialising of Structs
 serde = { version = "1" }
+
+
+# Allows application to gather system for memory allocation purposes.
+sysinfo = "0.28.4"
 
 # native:
 #[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
