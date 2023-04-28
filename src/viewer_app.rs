@@ -18,7 +18,6 @@ use atty;
 
 use crate::reader::*;
 
-
 #[derive(PartialEq,Debug)]
 enum Delimiter { Comma, Tab, Semicolon, Auto }
 
@@ -106,6 +105,7 @@ impl Default for ViewerApp {
 }
 
 
+
 impl eframe::App for ViewerApp {
     /// Called each time the UI needs to be repainted
     /// Widgets are placed inside of their respective panels
@@ -182,21 +182,13 @@ fn show_main_menu_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe
                 ui.label(format!("Delimiter Character: {:?}", app.file_info.delimiter.borrow()));
                 ui.horizontal(|ui| {
                     if ui.radio_value(&mut app.file_info.delimiter,
-                                      Delimiter::Comma, "COMMA").clicked() {
-                        // self.file_info.delimiter = Delimiter::Comma;
-                    }
+                                      Delimiter::Comma, "COMMA").clicked() {}
                     if ui.radio_value(&mut app.file_info.delimiter,
-                                      Delimiter::Tab, "TAB").clicked() {
-                        // self.file_info.delimiter = Delimiter::Tab;
-                    }
+                                      Delimiter::Tab, "TAB").clicked() {}
                     if ui.radio_value(&mut app.file_info.delimiter,
-                                      Delimiter::Semicolon, "SEMICOLON").clicked() {
-                        // self.file_info.delimiter = Delimiter::Semicolon;
-                    }
+                                      Delimiter::Semicolon, "SEMICOLON").clicked() {}
                     if ui.radio_value(&mut app.file_info.delimiter,
-                                      Delimiter::Auto, "AUTO").clicked() {
-                        // self.file_info.delimiter = Delimiter::Auto;
-                    }
+                                      Delimiter::Auto, "AUTO").clicked() {}
                 });
                 ui.separator();
                 ui.horizontal(|ui| {
@@ -411,6 +403,8 @@ fn show_first_page(app: &mut ViewerApp) {
     }
 }
 
+
+///Shows last page with the number of rows specified.
 fn show_last_page(app: &mut ViewerApp) {
     if app.file_info.total_rows > app.settings.num_rows_to_display {
         app.settings.current_pos = app.file_info.total_rows - app.settings.num_rows_to_display;
@@ -425,6 +419,8 @@ fn show_last_page(app: &mut ViewerApp) {
 }
 
 
+/// Open a delimited data afile and read in their headers and records.
+/// Uses the OS file dialog window by utilising RUSTY FILE DIALOGS by .
 fn open_file(app: &mut ViewerApp) {
     if let Some(path) = FileDialog::new().pick_file() {
         app.file_path = Option::from(path.display().to_string());
@@ -459,10 +455,6 @@ fn show_dialog_confirmation(app: &mut ViewerApp, ctx: & Context, text: &str) {
         });
 }
 
-fn _initialise_app_settings(app: &mut ViewerApp) {
-    app.settings.current_pos = 0;
-
-}
 
 /// Opens a dialog window that checks if the user really wants to quit the application or not.
 /// "Yes!" closes the Application.
@@ -493,10 +485,7 @@ pub fn run_app() -> eframe::Result<()> {
     // checks if run from terminal without a file passed in
     if atty::isnt(atty::Stream::Stdin){
         // Open from passed file
-        println!("Reading from Terminal Stdin");
         let mut reader: Reader<Stdin> = get_reader_stdin();
-        // let headers = get_headers_stdin(reader.borrow_mut());
-        // let records = get_records_stdin(reader.borrow_mut());
         viewer_app = ViewerApp {
             app_state: AppState::Viewer,
             file_info: Default::default(),
@@ -508,7 +497,7 @@ pub fn run_app() -> eframe::Result<()> {
     }
 
     let mut eframe_options = eframe::NativeOptions::default();
-    eframe_options.default_theme = Theme::Dark;
+    eframe_options.maximized = true;
 
     eframe::run_native(
         "CSV Viewer",
