@@ -10,8 +10,6 @@ use std::io;
 use std::mem::size_of_val;
 use csv::{Position, Reader, ReaderBuilder, StringRecord};
 
-const MAX_BUF_SIZE: usize = 1_000_000;
-
 
 /// Returns a reader object from stdin input
 pub fn get_reader_stdin() -> Reader<io::Stdin> {
@@ -77,8 +75,7 @@ pub fn get_records_stdin(reader: &mut Reader<Stdin>) -> Vec<StringRecord> {
 }
 
 
-
-
+/// Returns the row count of the file.
 pub fn get_row_count(file_path: Option<String>) -> u64 {
     let mut number_of_rows: u64 = 0;
 
@@ -88,17 +85,6 @@ pub fn get_row_count(file_path: Option<String>) -> u64 {
     let mut reader = get_reader_from_file(file_path);
 
     loop {
-        // match reader.read_line(&mut buffer) {
-        //     Ok(0) => break, // end of file
-        //     Ok(_) => {
-        //         // Process the data in the buffer
-        //         // ...
-        //         println!("Row: {}, Content: {}", number_of_rows +1, buffer);
-        //         number_of_rows = number_of_rows + 1;
-        //         buffer.clear(); // clear the buffer for the next chunk
-        //     }
-        //     Err(e) => print!("Error") // handle the error
-        // }
         match reader.read_record(&mut record) {
             Ok(false) => break, // end of file
             Ok(_) => {
@@ -112,7 +98,7 @@ pub fn get_row_count(file_path: Option<String>) -> u64 {
     number_of_rows
 }
 
-fn get_file_size_mb(file_path: String) -> f64 {
+fn _get_file_size_mb(file_path: String) -> f64 {
     let metadata = fs::metadata(file_path).unwrap();
     let size_in_bytes = metadata.len();
     let size_in_mb = size_in_bytes as f64 / (1024.0 * 1024.0);
@@ -134,10 +120,7 @@ pub fn get_records_from_pos(file_path: Option<String>, pos: u64, num_of_rows_to_
         start_pos = 1;
     }
 
-
-
-
-
+    // Seek to the row of pos
     for row in start_pos..pos+1 {
         match reader.read_record(&mut record) {
             Ok(false) => break,
@@ -146,7 +129,7 @@ pub fn get_records_from_pos(file_path: Option<String>, pos: u64, num_of_rows_to_
         }
     }
 
-    // Read data from the file into the buffer
+    // Read data from the file into records as a StringRecord Vector
     for row in 0..num_of_rows_to_display {
         match reader.read_record(&mut record) {
             Ok(false) => break, // end of file
