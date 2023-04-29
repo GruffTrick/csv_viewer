@@ -428,7 +428,7 @@ fn show_last_page(app: &mut ViewerApp) {
 }
 
 
-/// Open a delimited data afile and read in their headers and records.
+/// Open a delimited data file and read in their headers and records.
 /// Uses the OS file dialog window by utilising RUSTY FILE DIALOGS by .
 fn open_file(app: &mut ViewerApp) {
     if let Some(path) = FileDialog::new().pick_file() {

@@ -17,9 +17,10 @@ pub fn sort_records(file_path: String, output_path: String, field_index: usize) 
     }
 
     // Open the CSV file
-    let file = OpenOptions::new().read(true).write(true).open(file_path)?;
+    let file = OpenOptions::new().read(true).write(true).open(file_path.clone())?;
     let file_size = file.metadata()?.len();
     let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(file);
+    let mut h_test = ReaderBuilder::new().has_headers(true).from_path(file_path.clone())?;
 
     // Create a new sorted CSV file
     let sorted_file = OpenOptions::new()
@@ -28,10 +29,10 @@ pub fn sort_records(file_path: String, output_path: String, field_index: usize) 
         .create(true)
         .truncate(true)
         .open(output_path)?;
-    let mut wtr = WriterBuilder::new().has_headers(false).from_writer(sorted_file);
+    let mut wtr = WriterBuilder::new().has_headers(true).from_writer(sorted_file);
 
     // Write the CSV header to the new file
-    let header = rdr.headers().cloned().expect("Couldn't Extract Headers");
+    let header = rdr.headers()?;
     wtr.write_byte_record(&header.as_byte_record())?;
 
     // Calculate the chunk size based on available memory and file size
@@ -39,24 +40,31 @@ pub fn sort_records(file_path: String, output_path: String, field_index: usize) 
     let chunk_size = (available_memory / 4) as usize;
     let num_chunks = (file_size as usize / chunk_size) + 1;
 
+    // new header to reference, workaround to avoid duplicating the header inside the file.
+    let h = h_test.headers()?;
+
     // Sort the file in chunks
     for chunk_index in 0..num_chunks {
         // Seek to the beginning of the chunk
         let chunk_start = chunk_index * chunk_size;
-        let mut position: Position = Position::new();
-        position.set_record(chunk_start as u64);
-        rdr.seek(position.clone())?;
-        println!("{:?}", position);
+        // let mut position: Position = Position::new();
+        // position.set_record(chunk_start as u64);
+        // rdr.seek(position.clone())?;
+        // println!("{:?}", position);
 
 
         // Read the chunk into memory
         let mut chunk: Vec<StringRecord> = Vec::new();
 
         for row in 0..chunk_size {
-            let mut record: StringRecord = Default::default();
+            let mut record: StringRecord = StringRecord::new();
             match rdr.read_record(&mut record) {
                 Ok(false) => break,
-                Ok(_) => { chunk.push(record) },
+                Ok(_) => {
+                    if !matches(&record, &h) {
+                        chunk.push(record);
+                    }
+                },
                 Err(e) => println!("Error: Cannot Read Chunk"),
             }
         }
@@ -66,13 +74,18 @@ pub fn sort_records(file_path: String, output_path: String, field_index: usize) 
         chunk.sort_by_key(|record| record.get(field_index).unwrap().to_string());
 
         // Write the sorted chunk to the new file
-        for record in chunk {
+        for record in chunk.into_iter(){
             wtr.write_record(record.into_iter())?;
         }
         wtr.flush()?;
     }
 
     Ok(())
+}
+
+fn matches(record: &StringRecord, header: &StringRecord) -> bool {
+    if record == header { return true};
+    false
 }
 
 
