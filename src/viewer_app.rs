@@ -15,8 +15,10 @@ use eframe::{Theme, Frame};
 
 use rfd::FileDialog;
 use atty;
+use tracing_subscriber::fmt::format;
 
 use crate::reader::*;
+use crate::sort::sort_records;
 
 #[derive(PartialEq,Debug)]
 enum Delimiter { Comma, Tab, Semicolon, Auto }
@@ -65,6 +67,7 @@ pub struct AppSettings {
     allowed_to_quit: bool,
     dialog_open: bool,
     dialog_msg: DialogMessage,
+    index_selected_header: usize,
 }
 
 impl Default for AppSettings {
@@ -77,6 +80,7 @@ impl Default for AppSettings {
             allowed_to_quit: false,
             dialog_open: false,
             dialog_msg: DialogMessage::None,
+            index_selected_header: 0,
         }
     }
 }
@@ -119,7 +123,9 @@ impl eframe::App for ViewerApp {
                 show_viewer_window(self, ctx, frame);
             }
             AppState::Finder => {}
-            AppState::Sorter => {}
+            AppState::Sorter => {
+                show_sorter_window(self, ctx, frame);
+            }
         }
 
         // If the quit confirmation setting is enabled, open the quit confirmation menu.
@@ -244,8 +250,8 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
             });
             // Opens the Data menu from the top bar
             ui.menu_button("Data", |ui| {
-                if ui.button("(TBA)Sort...").clicked() {
-                    // code here
+                if ui.button("(WIP)Sort...").clicked() {
+                    app.app_state = AppState::Sorter;
                 }
             });
             // Opens the Find menu from the top bar
@@ -436,6 +442,39 @@ fn open_file(app: &mut ViewerApp) {
     }
 }
 
+
+fn show_sorter_window(app: &mut ViewerApp, ctx: & Context, frame: &mut Frame) {
+    let mut current_index = 0;
+
+    egui::CentralPanel::default().show(ctx, |ui| {
+        egui::Window::new("Sort File")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
+            .show(ctx, |ui| {
+                ui.heading("Header Fields:");
+                // ui.label(format!("{:?}", app.headers));
+                ui.horizontal(|ui| {
+                    for header in app.headers.into_iter() {
+                        if ui.button(header).clicked() { app.settings.index_selected_header = current_index.clone()};
+                        current_index = current_index + 1;
+                    }
+                });
+                ui.label(format!("Selected Header: {:?}", app.headers.get(app.settings.index_selected_header).unwrap()));
+                ui.separator();
+                ui.horizontal(|ui| {
+                    if ui.button("Sort and Export as...").clicked() {
+                        ui.add(egui::widgets::Spinner::new());
+                        sort_records(app.file_path.clone().unwrap(),
+                                     app.settings.index_selected_header,
+                                     app.file_info.has_headers).expect("Error: Cannot Sort Records");
+                    }
+                    if ui.button("Cancel").clicked() { app.app_state = AppState::Viewer;}
+                });
+                egui::warn_if_debug_build(ui);
+            });
+    });
+}
 
 /// Opens a dialog box within the eframe that displays passed string slice.
 /// The dialog box window remains open on top of the displayed content until the "okay" button is

@@ -9,18 +9,19 @@ use std::vec::IntoIter;
 use std::io::{BufRead, BufReader, BufWriter, Seek, SeekFrom, Write};
 use sysinfo::{System, SystemExt};
 
-pub fn _sort_records(column_index: usize) -> Result<(), Box<dyn Error>> {
-    let file_path = "sorted_data.csv"; // replace with argument
-    let is_head = true;
+pub fn sort_records(file_path: String, field_index: usize, has_header: bool) -> Result<(), Box<dyn Error>> {
+    let file_path = file_path; // replace with argument
+    let is_head = has_header;
+    let output_path = "sorted_data.csv";
 
 
-    match remove_file(file_path) {
+    match remove_file("sorted_file.csv") {
         Ok(()) => println!("File successfully deleted."),
-        Err(e) => println!("Error deleting file: {}", e),
+        Err(e) => println!("File not found: {}", output_path),
     }
 
     // Open the CSV file
-    let file = OpenOptions::new().read(true).write(true).open("sort_test.csv")?;
+    let file = OpenOptions::new().read(true).write(true).open(file_path)?;
     let file_size = file.metadata()?.len();
     let mut rdr = ReaderBuilder::new().has_headers(is_head).from_reader(file);
 
@@ -66,7 +67,7 @@ pub fn _sort_records(column_index: usize) -> Result<(), Box<dyn Error>> {
 
 
         // Sort the records by field index
-        chunk.sort_by_key(|record| record.get(column_index).unwrap().to_string());
+        chunk.sort_by_key(|record| record.get(field_index).unwrap().to_string());
 
         // Write the sorted chunk to the new file
         for record in chunk {
