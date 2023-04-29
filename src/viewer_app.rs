@@ -1,16 +1,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::borrow::{Borrow, BorrowMut};
+use std::error::Error;
 use std::vec::IntoIter;
 use std::fs::File;
 use std::io::{BufRead, Stdin};
 
 use csv::{Reader, ReaderBuilder, StringRecord};
 
-use egui::accesskit::Size;
 use egui::style::default_text_styles;
 use egui::{Align2, Context, Label, Painter, Response, Sense, Ui, Vec2};
 use egui_extras::{TableBuilder, Column};
+use egui_extras::{Size, StripBuilder};
 use eframe::{Theme, Frame};
 
 use rfd::FileDialog;
@@ -57,6 +58,7 @@ enum DialogMessage {
     PreviousPage,
     StartOfFile,
     EndOfFile,
+    ExportedFile,
 }
 
 pub struct AppSettings {
@@ -143,6 +145,7 @@ impl eframe::App for ViewerApp {
                 DialogMessage::PreviousPage => { dialog_msg = "Already on First Page";}
                 DialogMessage::StartOfFile => {dialog_msg = "Already at Start of File";}
                 DialogMessage::EndOfFile => {dialog_msg = "Already at End of File";}
+                DialogMessage::ExportedFile => {dialog_msg = "Sorted File Exported Successfully"}
             }
             show_dialog_confirmation(self, ctx, dialog_msg);
         }
@@ -225,7 +228,7 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
                 if ui.button("(TBA)Export to...").clicked() {
                     // code here
                 }
-                // Closes the frame and ends the application.
+                // Closes the opened file and returns to main menu.
                 if ui.button("Close").clicked() {
                     app.headers = StringRecord::new();
                     app.records = Vec::new();
@@ -284,7 +287,7 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
             .always_show_scroll(true)
             .stick_to_bottom(true)
             .show(ui, |ui| {
-            use egui_extras::{Size, StripBuilder};
+
             StripBuilder::new(ui)
                 .size(Size::remainder().at_least(100.0)) // for the table
                 .size(Size::exact(10.0)) // for the source code link
@@ -445,16 +448,21 @@ fn open_file(app: &mut ViewerApp) {
 
 fn show_sorter_window(app: &mut ViewerApp, ctx: & Context, frame: &mut Frame) {
     let mut current_index = 0;
+    let mut output_path = String::from("");
 
     egui::CentralPanel::default().show(ctx, |ui| {
         egui::Window::new("Sort File")
             .collapsible(false)
-            .resizable(false)
+            .resizable(true)
             .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
             .show(ctx, |ui| {
+                ui.heading("File Info");
+                ui.label(format!("Filepath: {}", app.file_path.clone().unwrap()));
+                ui.separator();
+
                 ui.heading("Header Fields:");
                 // ui.label(format!("{:?}", app.headers));
-                ui.horizontal(|ui| {
+                ui.horizontal_wrapped(|ui| {
                     for header in app.headers.into_iter() {
                         if ui.button(header).clicked() { app.settings.index_selected_header = current_index.clone()};
                         current_index = current_index + 1;
@@ -462,14 +470,35 @@ fn show_sorter_window(app: &mut ViewerApp, ctx: & Context, frame: &mut Frame) {
                 });
                 ui.label(format!("Selected Header: {:?}", app.headers.get(app.settings.index_selected_header).unwrap()));
                 ui.separator();
-                ui.horizontal(|ui| {
+
+                ui.horizontal_wrapped(|ui| {
                     if ui.button("Sort and Export as...").clicked() {
                         ui.add(egui::widgets::Spinner::new());
-                        sort_records(app.file_path.clone().unwrap(),
-                                     app.settings.index_selected_header,
-                                     app.file_info.has_headers).expect("Error: Cannot Sort Records");
+
+                        // Choose Export path
+                        if let Some(path) = FileDialog::new().save_file() {
+                            output_path = path.display().to_string();
+                            match sort_records(app.file_path.clone().unwrap(), output_path.clone(),
+                                               app.settings.index_selected_header,) {
+                                Ok(_) => {
+                                    app.settings.current_pos = 0;
+                                    app.file_path = Option::from(output_path.clone());
+                                    app.file_info.total_rows = get_row_count(app.file_path.clone());
+                                    app.records = get_records_from_pos(
+                                        app.file_path.clone(),
+                                        0,
+                                        app.settings.num_rows_to_display,
+                                        true);
+
+
+                                    app.settings.dialog_msg = DialogMessage::ExportedFile;
+                                    app.settings.dialog_open = true;
+                                }
+                                Err(_) => {println!("Error: Cannot Sort Records");}
+                            }
+                        }
                     }
-                    if ui.button("Cancel").clicked() { app.app_state = AppState::Viewer;}
+                    if ui.button("Return to File").clicked() { app.app_state = AppState::Viewer;}
                 });
                 egui::warn_if_debug_build(ui);
             });

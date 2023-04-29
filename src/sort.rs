@@ -9,13 +9,9 @@ use std::vec::IntoIter;
 use std::io::{BufRead, BufReader, BufWriter, Seek, SeekFrom, Write};
 use sysinfo::{System, SystemExt};
 
-pub fn sort_records(file_path: String, field_index: usize, has_header: bool) -> Result<(), Box<dyn Error>> {
-    let file_path = file_path; // replace with argument
-    let is_head = has_header;
-    let output_path = "sorted_data.csv";
+pub fn sort_records(file_path: String, output_path: String, field_index: usize) -> Result<(), Box<dyn Error>> {
 
-
-    match remove_file("sorted_file.csv") {
+    match remove_file(output_path.clone()) {
         Ok(()) => println!("File successfully deleted."),
         Err(e) => println!("File not found: {}", output_path),
     }
@@ -23,7 +19,7 @@ pub fn sort_records(file_path: String, field_index: usize, has_header: bool) -> 
     // Open the CSV file
     let file = OpenOptions::new().read(true).write(true).open(file_path)?;
     let file_size = file.metadata()?.len();
-    let mut rdr = ReaderBuilder::new().has_headers(is_head).from_reader(file);
+    let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(file);
 
     // Create a new sorted CSV file
     let sorted_file = OpenOptions::new()
@@ -31,7 +27,7 @@ pub fn sort_records(file_path: String, field_index: usize, has_header: bool) -> 
         .write(true)
         .create(true)
         .truncate(true)
-        .open("sorted_data.csv")?;
+        .open(output_path)?;
     let mut wtr = WriterBuilder::new().has_headers(false).from_writer(sorted_file);
 
     // Write the CSV header to the new file
@@ -75,8 +71,6 @@ pub fn sort_records(file_path: String, field_index: usize, has_header: bool) -> 
         }
         wtr.flush()?;
     }
-
-
 
     Ok(())
 }
