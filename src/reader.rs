@@ -124,26 +124,67 @@ pub fn get_records_from_pos(file_path: Option<String>, pos: usize, num_of_rows_t
     let mut reader = BufReader::new(file);
     let mut buffer = Vec::new();
     let mut lines_read = 0;
-    loop {
+
+    // skip header
+    if has_header && (pos == 0) {
         let mut line = String::new();
-        let bytes_read = reader.read_line(&mut line).unwrap();
-        if bytes_read == 0 { // EOF reached
+        reader.read_line(&mut line).unwrap();
+        lines_read = 1
+    }
+
+    // create CSV reader
+    let mut csv_reader = ReaderBuilder::new()
+        .delimiter(b',')
+        .has_headers(!has_header)
+        .from_reader(reader);
+
+    // skip to starting position
+    for _ in 0..pos {
+        let mut record = StringRecord::new();
+        let bytes_read = csv_reader.read_record(&mut record).unwrap();
+        if bytes_read == false {
             break;
         }
-        lines_read += 1;
-        if lines_read >= pos {
-            buffer.extend(line.as_bytes());
-            if buffer.len() >= num_of_rows_to_display * line.len() { // buffer full
+    }
+
+    // read line forward by 1 if file has header and not reading from pos 0
+    if has_header && (pos != 0) {
+        let mut record = StringRecord::new();
+        csv_reader.read_record(&mut record).unwrap();
+    }
+
+    // read records into buffer
+    for result in csv_reader.records() {
+        if let Ok(record) = result {
+            buffer.push(record.clone());
+            if buffer.len() >= num_of_rows_to_display {
                 break;
             }
         }
     }
-    let cursor = Cursor::new(buffer);
-    let mut csv_reader = ReaderBuilder::new()
-        .has_headers(false)
-        .from_reader(cursor);
-    let records: Vec<StringRecord> = csv_reader.records().map(|r| r.unwrap()).collect();
-    records
+    buffer
+
+
+    // loop {
+    //     let mut line = String::new();
+    //     let bytes_read = reader.read_line(&mut line).unwrap();
+    //     if bytes_read == 0 { // EOF reached
+    //         break;
+    //     }
+    //     lines_read += 1;
+    //     if lines_read >= pos {
+    //         buffer.extend(line.as_bytes());
+    //         if buffer.len() >= num_of_rows_to_display * line.len() { // buffer full
+    //             break;
+    //         }
+    //     }
+    // }
+    // let cursor = Cursor::new(buffer);
+    // let mut csv_reader = ReaderBuilder::new()
+    //     .has_headers(false)
+    //     .from_reader(cursor);
+    // let records: Vec<StringRecord> = csv_reader.records().map(|r| r.unwrap()).collect();
+    // records
 }
 
 //
