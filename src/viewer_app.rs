@@ -304,9 +304,22 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
         });
         egui::TopBottomPanel::bottom("bottom_panel").show_separator_line(true).show(ctx, |ui| {
             ui.horizontal_centered(|ui| {
-                if app.file_info.has_headers {ui.label(format!("Total Rows: {}", app.file_info.total_rows.clone()));}
-                else {ui.label(format!("Total Rows: {}", app.file_info.total_rows.clone()));}
-                ui.label(format!("Top Pos: {}", app.settings.current_pos.clone()));
+                // Display the total record count of file and page's position in file
+                if app.file_info.has_headers && (app.file_info.total_rows > 1) {
+                    // If a file had headers, remove header from row count
+                    ui.label(format!("Total Rows: {}", app.file_info.total_rows.clone()-1));
+                } else {
+                    ui.label(format!("Total Rows: {}", app.file_info.total_rows.clone()));
+                }
+                if app.file_info.has_headers && (app.settings.current_pos > 0) {
+                    // ignore header row in count.
+                    ui.label(format!("Top Pos: {}", app.settings.current_pos.clone()-1));
+                } else {
+                    ui.label(format!("Top Pos: {}", app.settings.current_pos.clone()));
+                }
+                if ui.button("Next Page").clicked() {show_next_page(app);}
+                if ui.button("Prev Page").clicked() {show_prev_page(app);}
+
                 egui::warn_if_debug_build(ui);
             });
         });
