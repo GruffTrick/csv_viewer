@@ -122,9 +122,10 @@ pub fn get_records_from_pos(file_path: Option<String>, pos: u64, num_of_rows_to_
 
     // Seek to the row of pos
     for row in start_pos..pos+1 {
+        print!("Seeking to");
         match reader.read_record(&mut record) {
             Ok(false) => break,
-            Ok(_) => { println!("{:?}", record.clone()) },
+            Ok(_) => { println!("{},{:?}", row, record.clone()) },
             Err(e) => println!("TODO: Error"),
         }
     }
@@ -135,7 +136,7 @@ pub fn get_records_from_pos(file_path: Option<String>, pos: u64, num_of_rows_to_
             Ok(false) => break, // end of file
             Ok(_) => {
                 // Process the data in the buffer
-                println!("{:?}", record.clone());
+                println!("reading record{:?}", record.clone());
                 records.push(record.clone())
             }
             Err(e) => println!("TODO: Error"), // handle the error

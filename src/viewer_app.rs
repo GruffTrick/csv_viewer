@@ -435,7 +435,7 @@ fn open_file(app: &mut ViewerApp) {
         app.file_path = Option::from(path.display().to_string());
         app.file_info.total_rows = get_row_count(app.file_path
             .clone());
-        let mut reader: Reader<File> = get_reader_from_file(app.file_path.clone());
+        let mut reader = ReaderBuilder::new().has_headers(app.file_info.has_headers).from_path(app.file_path.clone().unwrap()).unwrap();
         app.headers = get_headers_from_file(reader.borrow_mut());
         app.records = get_records_from_pos(app.file_path.clone(),
                                            app.settings.current_pos.clone(),
