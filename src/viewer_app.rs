@@ -27,7 +27,7 @@ enum Delimiter { Comma, Tab, Semicolon, Auto }
 struct FileInfo {
     delimiter: Delimiter, // unsure about string slice atm
     file_size_mb: f64,
-    total_rows: u64,
+    total_rows: usize,
     has_headers: bool,
 }
 
@@ -63,8 +63,8 @@ enum DialogMessage {
 
 pub struct AppSettings {
     has_file: bool,
-    num_rows_to_display: u64,
-    current_pos: u64,
+    num_rows_to_display: usize,
+    current_pos: usize,
     quit_confirmation: bool,
     allowed_to_quit: bool,
     dialog_open: bool,
@@ -351,7 +351,7 @@ fn build_table (app: &mut ViewerApp, ctx: & Context, ui: &mut Ui) {
                 body.row(30.0, |mut row| {
                     // display row index
                     row.col(|ui| {
-                        ui.label(format!("{}", app.settings.current_pos.clone() + line as u64 + 1));
+                        ui.label(format!("{}", app.settings.current_pos.clone() + line + 1));
                     });
                     for column in record {
                         row.col(|ui| {
@@ -435,8 +435,8 @@ fn open_file(app: &mut ViewerApp) {
         app.file_path = Option::from(path.display().to_string());
         app.file_info.total_rows = get_row_count(app.file_path
             .clone());
-        let mut reader = ReaderBuilder::new().has_headers(app.file_info.has_headers).from_path(app.file_path.clone().unwrap()).unwrap();
-        app.headers = get_headers_from_file(reader.borrow_mut());
+        // let mut reader:Reader<File> = ReaderBuilder::new().has_headers(app.file_info.has_headers).from_path(app.file_path.clone().unwrap()).unwrap();
+        app.headers = get_headers_from_file(app.file_path.clone().unwrap());
         app.records = get_records_from_pos(app.file_path.clone(),
                                            app.settings.current_pos.clone(),
                                            app.settings.num_rows_to_display,
