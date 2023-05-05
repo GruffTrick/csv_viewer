@@ -191,19 +191,19 @@ pub mod viewer_app {
                     ui.horizontal(|ui| {
                         if ui.radio_value(&mut app.file_info.has_headers,
                                           true, "Yes").clicked() {}
-                        if ui.radio_value(&mut app.file_info.has_headers,
-                                          false, "No").clicked() {}
+                        // if ui.radio_value(&mut app.file_info.has_headers,
+                        //                   false, "No").clicked() {}
                     });
                     ui.label(format!("Delimiter Character: {:?}", app.file_info.delimiter.borrow()));
                     ui.horizontal(|ui| {
                         if ui.radio_value(&mut app.file_info.delimiter,
                                           Delimiter::Comma, "COMMA").clicked() {}
-                        if ui.radio_value(&mut app.file_info.delimiter,
-                                          Delimiter::Tab, "TAB").clicked() {}
-                        if ui.radio_value(&mut app.file_info.delimiter,
-                                          Delimiter::Semicolon, "SEMICOLON").clicked() {}
-                        if ui.radio_value(&mut app.file_info.delimiter,
-                                          Delimiter::Auto, "AUTO").clicked() {}
+                        // if ui.radio_value(&mut app.file_info.delimiter,
+                        //                   Delimiter::Tab, "TAB").clicked() {}
+                        // if ui.radio_value(&mut app.file_info.delimiter,
+                        //                   Delimiter::Semicolon, "SEMICOLON").clicked() {}
+                        // if ui.radio_value(&mut app.file_info.delimiter,
+                        //                   Delimiter::Auto, "AUTO").clicked() {}
                     });
                     ui.separator();
                     ui.horizontal(|ui| {
@@ -629,18 +629,18 @@ pub mod viewer_app {
         let mut viewer_app = ViewerApp::default();
 
         // checks if run from terminal without a file passed in
-        if atty::isnt(atty::Stream::Stdin) {
-            // Open from passed file
-            let mut reader: Reader<Stdin> = get_reader_stdin();
-            viewer_app = ViewerApp {
-                app_state: AppState::Viewer,
-                file_info: Default::default(),
-                headers: get_headers_stdin(reader.borrow_mut()),
-                records: get_records_stdin(reader.borrow_mut()),
-                file_path: None,
-                settings: Default::default(),
-            };
-        }
+        // if atty::isnt(atty::Stream::Stdin) {
+        //     // Open from passed file
+        //     let mut reader: Reader<Stdin> = get_reader_stdin();
+        //     viewer_app = ViewerApp {
+        //         app_state: AppState::Viewer,
+        //         file_info: Default::default(),
+        //         headers: get_headers_stdin(reader.borrow_mut()),
+        //         records: get_records_stdin(reader.borrow_mut()),
+        //         file_path: None,
+        //         settings: Default::default(),
+        //     };
+        // }
 
         let mut eframe_options = eframe::NativeOptions::default();
         eframe_options.maximized = true;

@@ -10,17 +10,7 @@ sudo apt-get install -y libclang-dev libgtk-3-dev libxcb-render0-dev libxcb-shap
 ```
 
 ## Running the Application
-Until the release version is available, compiling is required first using
-```
-cargo build
-```
-
-Then you can either run the native binary and open from file dialogue
-*or*
-Run the binary inside the repository directory and pass the csv file to quickly open a file.
-```
-./target/debug/CSV-Viewer < "CSVFILENAME.csv"
-```
+The binary is located within the `/target/release` directory.  As long as dependencies are installed, can be run by right clicking and pressing run, or can be run from the terminal.
 
 
 ### Resources Used:
@@ -31,3 +21,17 @@ by Steve Klabnik and Carol Nichols, with contributions from the Rust Community:
 
 CSV Crate Cookbook
 - https://docs.rs/csv/latest/csv/cookbook/index.html
+
+
+### Third Party Libraries
+`csv` crate by BurntSushi
+avaiable at: https://github.com/BurntSushi/rust-csv`
+
+`egui` and `eframe` by emilk
+available at: https://github.com/emilk/egui
+
+`atty` by softprops
+avaiable at:https://github.com/softprops/atty
+
+`rfd` by PolyMeilex
+available at: https://github.com/PolyMeilex/rfd
