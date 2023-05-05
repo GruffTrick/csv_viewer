@@ -469,7 +469,9 @@ fn open_file(app: &mut ViewerApp) {
     }
 }
 
-
+/// Displays the sorter window within the context of the Viewer App frame.
+/// Displays the headers of the CSV file as buttons, that when clicked, select that column for sorting the file by
+/// before exporting the file to a user specified location.
 fn show_sorter_window(app: &mut ViewerApp, ctx: & Context, frame: &mut Frame) {
     let mut current_index = 0;
     let mut output_path = String::from("");
@@ -530,7 +532,9 @@ fn show_sorter_window(app: &mut ViewerApp, ctx: & Context, frame: &mut Frame) {
 }
 
 
-
+/// Opens the find window inside the frame of the Viewer App.
+/// The find window displays as a small popup window above the viewer interface.
+/// Interacting with the "Find Matches" button calls `find_matching_rows()` function from find.rs.
 fn show_find_window(app: &mut ViewerApp, ctx: &Context, frame: &mut Frame) {
     egui::Window::new("Find")
         .collapsible(false)

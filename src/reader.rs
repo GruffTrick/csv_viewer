@@ -119,6 +119,15 @@ fn _get_file_size_mb(file_path: String) -> f64 {
 
 /// Builds a vector of String Records by reading a buffer of pre-determined size
 /// from the referenced file path.
+/// ```
+/// let file_path = "uspop.csv";
+/// let pos = 6;
+/// let rows_to_display = 4;
+/// let test_records: Vec<StringRecord> = [[Richards Crossroads,AL,,31.7369444,-85.2644444],[Sandfort,AL,,32.3380556,-85.2233333],[Selma,AL,18980,32.4072222,-87.0211111],[Shadow Oaks Addition,AR,,34.9555556,-91.9475000]]
+///
+/// let result_records = doccomments::get_records_from_pos(file_path, pos, rows_to_display, true);
+/// asserteq!(result_records, test_records);
+/// ```
 pub fn get_records_from_pos(file_path: Option<String>, pos: usize, num_of_rows_to_display: usize, has_header: bool) -> Vec<StringRecord> {
     let file = File::open(file_path.unwrap()).unwrap();
     let mut reader = BufReader::new(file);
@@ -163,68 +172,4 @@ pub fn get_records_from_pos(file_path: Option<String>, pos: usize, num_of_rows_t
         }
     }
     buffer
-
-
-    // loop {
-    //     let mut line = String::new();
-    //     let bytes_read = reader.read_line(&mut line).unwrap();
-    //     if bytes_read == 0 { // EOF reached
-    //         break;
-    //     }
-    //     lines_read += 1;
-    //     if lines_read >= pos {
-    //         buffer.extend(line.as_bytes());
-    //         if buffer.len() >= num_of_rows_to_display * line.len() { // buffer full
-    //             break;
-    //         }
-    //     }
-    // }
-    // let cursor = Cursor::new(buffer);
-    // let mut csv_reader = ReaderBuilder::new()
-    //     .has_headers(false)
-    //     .from_reader(cursor);
-    // let records: Vec<StringRecord> = csv_reader.records().map(|r| r.unwrap()).collect();
-    // records
 }
-
-//
-// /// Builds a vector of String Records by reading a buffer of pre-determined size
-// /// from the referenced file path.
-// pub fn get_records_from_pos(file_path: Option<String>, pos: u64, num_of_rows_to_display: u64, has_header: bool) -> Vec<StringRecord> {
-//     let mut records: Vec<StringRecord> = Vec::new();
-//     let mut record = StringRecord::new();
-//     // let p: String = file_path.unwrap();
-//
-//     let mut reader = csv::ReaderBuilder::new().has_headers(has_header).from_path(file_path.unwrap()).unwrap();
-//
-//     let mut start_pos = 0;
-//     if has_header == true {
-//         start_pos = 1;
-//     }
-//
-//     // Seek to the row of pos
-//     for row in start_pos..pos+1 {
-//         print!("Seeking to");
-//         match reader.read_record(&mut record) {
-//             Ok(false) => break,
-//             Ok(_) => { println!("{},{:?}", row, record.clone()) },
-//             Err(e) => println!("TODO: Error"),
-//         }
-//     }
-//
-//     // Read data from the file into records as a StringRecord Vector
-//     for row in 0..num_of_rows_to_display {
-//         match reader.read_record(&mut record) {
-//             Ok(false) => break, // end of file
-//             Ok(_) => {
-//                 // Process the data in the buffer
-//                 println!("reading record{:?}", record.clone());
-//                 records.push(record.clone())
-//             }
-//             Err(e) => println!("TODO: Error"), // handle the error
-//         }
-//     }
-//
-//     records
-// }
-
