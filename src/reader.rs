@@ -95,6 +95,7 @@ pub mod reader {
    ///  let row_count_result = csv_viewer::reader::reader::get_row_count(Option::from(String::from("tests/test_row_count.txt")));
    ///  assert_eq!(row_count_result, 10);
    /// ```
+    ///
     pub fn get_row_count(file_path: Option<String>) -> usize {
         let file = File::open(file_path.unwrap()).unwrap();
         let reader = BufReader::new(file);

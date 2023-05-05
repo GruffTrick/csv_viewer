@@ -108,50 +108,68 @@ pub mod sort {
         Ok(())
     }
 
+    /// Checks whether two string records match one another.  Intended for comparing a passed string record value
+    /// to the header, to avoid printing the header twice.
+    ///
+    /// # Example
+    /// ```
+    /// use csv_viewer::sort::sort::matches;
+    /// use csv::StringRecord;
+    ///
+    /// let header = StringRecord::from(vec!["name", "age", "city"]);
+    /// let record = StringRecord::from(vec!["Gruff Trick", "22", "Wales"]);
+    /// let match_result = matches(&record, &header);
+    /// assert_eq!(match_result, false);
+    ///
+    /// let header = StringRecord::from(vec!["name", "age", "city"]);
+    /// let record = StringRecord::from(vec!["name", "age", "city"]);
+    /// let match_result = matches(&record, &header);
+    /// assert_eq!(match_result, true);
+    /// ```
     fn matches(record: &StringRecord, header: &StringRecord) -> bool {
         if record == header { return true };
         false
     }
 }
-
-#[cfg(tests)]
-mod tests {
-    use csv::ReaderBuilder;
-
-    #[test]
-    fn test_sort_records() -> Result<(), Box<dyn Error>> {
-        use std::error::Error;
-        use std::fs::File;
-        use std::io::prelude::*;
-        use csv::{ReaderBuilder, WriterBuilder, StringRecord};
-
-        // create the file and writer.
-        let file = File::create("tests/test_sort.txt")?;
-        let mut csv_writer = WriterBuilder::new().has_headers(true).from_writer(file);
-
-        csv_writer.write_record(&[City,State,Population,Latitude,Longitude])?;
-        csv_writer.write_record(&["Sandfort", "AL", "", "32.3380556", "-85.2233333"]);
-        csv_writer.write_record(&["Shadow Oaks Addition", "AR", "", "34.9555556", "-91.9475000"]);
-        csv_writer.write_record(&["Selma", "AL", "18980", "32.4072222", "-87.0211111"]);
-        csv_writer.write_record(&["Richards Crossroads", "AL", "", "31.7369444", "-85.2644444"])?;
-
-        let file = File::open("tests/test_sort_output.txt")?;
-        let reader = BufReader::new(file);
-        let mut records: Vec<StringRecord> = Vec::new();
-
-        // iterate over the records
-        let mut csv_reader = csv::ReaderBuilder::new().has_headers(true).from_reader(reader);
-        for result in csv_reader.records() {
-            let record = result?;
-            records.push(record);
-        }
-
-        let sorted_records = vec![["Richards Crossroads", "AL", "", "31.7369444", "-85.2644444"],["Sandfort", "AL", "", "32.3380556", "-85.2233333"],["Selma", "AL", "18980", "32.4072222", "-87.0211111"],["Shadow Oaks Addition", "AR", "", "34.9555556", "-91.9475000"]];
-
-        sort_records(String::from("tests/test_sort.txt"), String::from("tests/test_sort_output.txt"), 0);
-
-        assert_eq!(sorted_records, records);
-
-        Ok(())
-    }
-}
+//
+// #[cfg(tests)]
+// mod tests {
+//     use csv::ReaderBuilder;
+//
+//     #[test]
+//     fn test_sort_records() -> Result<(), Box<dyn Error>> {
+//         use std::error::Error;
+//         use std::fs::File;
+//         use std::io::prelude::*;
+//         use csv::{ReaderBuilder, WriterBuilder, StringRecord};
+//
+//         // create the file and writer.
+//         let file = File::create("tests/test_sort.txt")?;
+//         let mut csv_writer = WriterBuilder::new().has_headers(true).from_writer(file);
+//
+//         csv_writer.write_record(&[City,State,Population,Latitude,Longitude])?;
+//         csv_writer.write_record(&["Sandfort", "AL", "", "32.3380556", "-85.2233333"]);
+//         csv_writer.write_record(&["Shadow Oaks Addition", "AR", "", "34.9555556", "-91.9475000"]);
+//         csv_writer.write_record(&["Selma", "AL", "18980", "32.4072222", "-87.0211111"]);
+//         csv_writer.write_record(&["Richards Crossroads", "AL", "", "31.7369444", "-85.2644444"])?;
+//
+//         let file = File::open("tests/test_sort_output.txt")?;
+//         let reader = BufReader::new(file);
+//         let mut records: Vec<StringRecord> = Vec::new();
+//
+//         // iterate over the records
+//         let mut csv_reader = csv::ReaderBuilder::new().has_headers(true).from_reader(reader);
+//         for result in csv_reader.records() {
+//             let record = result?;
+//             records.push(record);
+//         }
+//
+//         let sorted_records = vec![["Richards Crossroads", "AL", "", "31.7369444", "-85.2644444"],["Sandfort", "AL", "", "32.3380556", "-85.2233333"],["Selma", "AL", "18980", "32.4072222", "-87.0211111"],["Shadow Oaks Addition", "AR", "", "34.9555556", "-91.9475000"]];
+//
+//         sort_records(String::from("tests/test_sort.txt"), String::from("tests/test_sort_output.txt"), 0);
+//
+//         assert_eq!(sorted_records, records);
+//
+//         Ok(())
+//     }
+// }
