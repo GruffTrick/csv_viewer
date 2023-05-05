@@ -3,6 +3,7 @@
 mod viewer_app;
 mod reader;
 mod sort;
+mod find;
 
 use serde::de::Unexpected::Option;
 use viewer_app::run_app;

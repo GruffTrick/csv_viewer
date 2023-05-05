@@ -9,7 +9,7 @@ use std::io::{BufRead, Stdin};
 use csv::{Reader, ReaderBuilder, StringRecord};
 
 use egui::style::default_text_styles;
-use egui::{Align2, Context, Label, Painter, Response, Sense, Ui, Vec2};
+use egui::{Align2, Context, Label, Painter, Pos2, Response, Sense, Ui, Vec2};
 use egui_extras::{TableBuilder, Column};
 use egui_extras::{Size, StripBuilder};
 use eframe::{Theme, Frame};
@@ -20,6 +20,7 @@ use tracing_subscriber::fmt::format;
 
 use crate::reader::*;
 use crate::sort::sort_records;
+use crate::find::{find_matching_rows, find_row_of_next};
 
 #[derive(PartialEq,Debug)]
 enum Delimiter { Comma, Tab, Semicolon, Auto }
@@ -47,7 +48,6 @@ impl Default for FileInfo {
 enum AppState {
     MainMenu,
     Viewer,
-    Finder,
     Sorter,
 }
 
@@ -70,6 +70,10 @@ pub struct AppSettings {
     dialog_open: bool,
     dialog_msg: DialogMessage,
     index_selected_header: usize,
+    show_finder: bool,
+    find_string: String,
+    find_matching_rows: Vec<usize>,
+    find_matches_index: usize,
 }
 
 impl Default for AppSettings {
@@ -83,6 +87,10 @@ impl Default for AppSettings {
             dialog_open: false,
             dialog_msg: DialogMessage::None,
             index_selected_header: 0,
+            show_finder: false,
+            find_string: String::from(""),
+            find_matching_rows: Vec::new(),
+            find_matches_index: 0,
         }
     }
 }
@@ -124,10 +132,13 @@ impl eframe::App for ViewerApp {
             AppState::Viewer => {
                 show_viewer_window(self, ctx, frame);
             }
-            AppState::Finder => {}
             AppState::Sorter => {
                 show_sorter_window(self, ctx, frame);
             }
+        }
+
+        if self.settings.show_finder == true {
+            show_find_window(self, ctx,frame);
         }
 
         // If the quit confirmation setting is enabled, open the quit confirmation menu.
@@ -263,7 +274,7 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
                     // code here
                 }
                 if ui.button("(TBA)Find...").clicked() {
-                    // code here
+                    app.settings.show_finder = true;
                 }
                 if ui.button("Go To Start of File").clicked() {
                     show_first_page(app);
@@ -313,7 +324,7 @@ fn show_viewer_window(app: &mut ViewerApp, ctx: & Context, frame: &mut eframe::F
                 }
                 if app.file_info.has_headers && (app.settings.current_pos > 0) {
                     // ignore header row in count.
-                    ui.label(format!("Top Pos: {}", app.settings.current_pos.clone()-1));
+                    ui.label(format!("Top Pos: {}", app.settings.current_pos.clone()+1));
                 } else {
                     ui.label(format!("Top Pos: {}", app.settings.current_pos.clone()));
                 }
@@ -518,6 +529,58 @@ fn show_sorter_window(app: &mut ViewerApp, ctx: & Context, frame: &mut Frame) {
     });
 }
 
+
+
+fn show_find_window(app: &mut ViewerApp, ctx: &Context, frame: &mut Frame) {
+    egui::Window::new("Find")
+        .collapsible(false)
+        .resizable(true)
+        .movable(true)
+        .default_pos(Pos2 {x: 0.0, y: 0.0})
+        .show(ctx, |ui| {
+            let response = ui.add(egui::TextEdit::singleline(&mut app.settings.find_string).desired_width(250.0));
+            ui.label(format!("(Case-Sensitive) Searching for: {:?}", app.settings.find_string.clone()));
+            if ui.button("Find Matches").clicked() {
+                app.settings.find_matches_index = 0;
+                app.settings.find_matching_rows = find_matching_rows(app.file_path.clone(), app.settings.find_string.clone(), app.file_info.has_headers.clone());
+                println!("{:?}", app.settings.find_matching_rows.clone());
+            }
+            if response.changed() {
+                println!("Response Changed");
+                app.settings.find_matching_rows = Vec::new();
+                app.settings.find_matches_index = 0;
+            }
+            if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                app.settings.find_matches_index = 0;
+                app.settings.find_matching_rows = find_matching_rows(app.file_path.clone(), app.settings.find_string.clone(), app.file_info.has_headers.clone());
+                println!("{:?}", app.settings.find_matching_rows.clone());
+            }
+            ui.label(format!("Number of matches: {:?}", app.settings.find_matching_rows.len()));
+            // ui.label(format!("Number of matches: {:?}", app.settings.find_matching_rows.clone()));
+            ui.horizontal(|ui| {
+                if ui.button("Show Next").clicked() {
+                    if app.settings.find_matching_rows.len() > 0 {
+                        let row_matching: usize = find_row_of_next(app.settings.find_matching_rows.clone(), app.settings.find_matches_index.clone());
+                        println!("current row matching: {:?}", row_matching);
+                        app.records = get_records_from_pos(app.file_path.clone(),
+                                                           row_matching-1,
+                                                           app.settings.num_rows_to_display,
+                                                           app.file_info.has_headers.clone());
+                        app.settings.current_pos = row_matching-1;
+                        if app.settings.find_matches_index < app.settings.find_matching_rows.len()-1 {
+                            app.settings.find_matches_index += 1;
+                        } else {
+                            app.settings.find_matches_index = 0;
+                        }
+                    }
+                }
+                if ui.button("Close").clicked() {
+                    app.settings.show_finder = false;
+                }
+            })
+        });
+}
+
 /// Opens a dialog box within the eframe that displays passed string slice.
 /// The dialog box window remains open on top of the displayed content until the "okay" button is
 /// clicked by the user.
@@ -535,7 +598,6 @@ fn show_dialog_confirmation(app: &mut ViewerApp, ctx: & Context, text: &str) {
             });
         });
 }
-
 
 /// Opens a dialog window that checks if the user really wants to quit the application or not.
 /// "Yes!" closes the Application.
