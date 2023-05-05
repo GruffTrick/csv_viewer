@@ -269,7 +269,7 @@ pub mod viewer_app {
                     if ui.button("(TBA) Go To Line...").clicked() {
                         // code here
                     }
-                    if ui.button("(TBA)Find...").clicked() {
+                    if ui.button("Find...").clicked() {
                         app.settings.show_finder = true;
                     }
                     if ui.button("Go To Start of File").clicked() {
@@ -382,6 +382,7 @@ pub mod viewer_app {
             });
     }
 
+    /// Updates the records field of the `ViewerApp` with the next page's records.
     fn show_next_page(app: &mut ViewerApp) {
         if app.settings.current_pos + app.settings.num_rows_to_display <= app.file_info.total_rows {
             app.records = get_records_from_pos(
@@ -396,6 +397,11 @@ pub mod viewer_app {
         }
     }
 
+    /// Updates the records field of the `ViewerApp` with the previous page's records.
+    /// The number of records displayed on the page, depends on the value ViewerApp's `num_rows_to_display`
+    /// field.
+    /// If there aren't enough records on the previous page or the current row position is 0
+    /// the `current_pos` field is set to 0;
     fn show_prev_page(app: &mut ViewerApp) {
         // Shows previous page
         // go back NUM_ROWS_TO_DISPLAY,

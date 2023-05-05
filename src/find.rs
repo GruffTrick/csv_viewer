@@ -7,12 +7,11 @@ pub mod find {
 
     /// Finds all matches and returns a vector of the indices of rows with matching strings.
     ///
-    /// /// # Example
+    /// # Example
     ///
     /// ```
     /// use csv_viewer::find::find::find_matching_rows;
     ///
-    /// // Creates a CSV file with the following contents:
     /// // "Alice,30\nBob,35\nCharlie,25\nDave,40\nEve,30\n"
     /// let file_path = "tests/test_find_matching.csv";
     /// let contents = "Alice,30\nBob,35\nCharlie,25\nDave,40\nEve,30\n";
@@ -51,7 +50,20 @@ pub mod find {
         matched_rows
     }
 
-    /// returns the row of the matching string, stored at the index `i`
+    /// Returns the index of the next matching string, stored at within the vector
+    /// using the index i for the element within the vec.
+    ///
+    /// # Example
+    ///
+     /// use csv_viewer::find::find::find_row_of_next;
+    ///
+    /// let vec = vec![1, 2, 3, 4, 5];
+    ///
+    /// assert_eq!(find_row_of_next(vec, 0), 1);
+    /// assert_eq!(find_row_of_next(vec, 3), 4);
+    /// assert_eq!(find_row_of_next(vec, 4), 0);
+    /// ```
+    ///
     pub fn find_row_of_next(vec: Vec<usize>, i: usize) -> usize {
         let mut match_index: usize = 0;
         if i < vec.len() {
