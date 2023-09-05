@@ -23,7 +23,7 @@ CSV Crate Cookbook
 - https://docs.rs/csv/latest/csv/cookbook/index.html
 
 
-### Third Party Libraries
+### Third-Party Libraries
 `csv` crate by BurntSushi
 avaiable at: https://github.com/BurntSushi/rust-csv`
 
