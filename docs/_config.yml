@@ -1,0 +1,5 @@
+title: csv_viewer
+#logo: 
+description: CSV Viewer for Linux. Written in Rust.
+show_downloads: true
+theme: hacker

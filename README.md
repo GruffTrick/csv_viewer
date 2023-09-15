@@ -4,7 +4,7 @@ Written in Rust.
 
 
 ## Dependencies
-Linux has the following packages required:
+The following packages required to run on linux:
 ```
 sudo apt-get install -y libclang-dev libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev
 ```
@@ -23,7 +23,7 @@ CSV Crate Cookbook
 - https://docs.rs/csv/latest/csv/cookbook/index.html
 
 
-### Third Party Libraries
+### Third-Party Libraries
 `csv` crate by BurntSushi
 avaiable at: https://github.com/BurntSushi/rust-csv`
 
@@ -35,6 +35,7 @@ avaiable at:https://github.com/softprops/atty
 
 `rfd` by PolyMeilex
 available at: https://github.com/PolyMeilex/rfd
+<<<<<<< HEAD
 
 
 ## TODO
@@ -51,3 +52,5 @@ available at: https://github.com/PolyMeilex/rfd
 ### 1.0.1 - IN PROGRESS
 
 ### v1.0.0 - First full Release
+=======
+>>>>>>> refs/remotes/origin/main
