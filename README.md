@@ -35,3 +35,19 @@ avaiable at:https://github.com/softprops/atty
 
 `rfd` by PolyMeilex
 available at: https://github.com/PolyMeilex/rfd
+
+
+## TODO
+ - Finish delimiter selection
+ - - delimiter character  automatic detection feature
+
+ - Utilise multithreading
+ - - Draw progress bars on main thread
+ - - Run functions on spawned threads to remove 
+
+
+## Changelog
+
+### 1.0.1 - IN PROGRESS
+
+### v1.0.0 - First full Release
