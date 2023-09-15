@@ -21,7 +21,7 @@ pub mod viewer_app {
     use crate::sort::sort::sort_records;
     use crate::find::find::{find_matching_rows, find_row_of_next};
 
-    #[derive(PartialEq, Debug)]
+    #[derive(PartialEq, Debug, Clone)]
     enum Delimiter { Comma, Tab, Semicolon, Auto }
 
     struct FileInfo {
@@ -172,6 +172,21 @@ pub mod viewer_app {
         // }
     }
 
+    fn get_delimiter(d: Delimiter) -> char {
+        let mut delim: char = ',';
+        if d == Delimiter::Comma {
+            delim = ',';
+        }
+        if d == Delimiter::Tab {
+            delim = '\t';
+        }
+        if d == Delimiter::Semicolon {
+            delim = ';';
+        }
+
+        return delim
+    }
+
     /// Shows the main menu window inside the frame.
     fn show_main_menu_window(app: &mut ViewerApp, ctx: &Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -194,14 +209,14 @@ pub mod viewer_app {
                         // if ui.radio_value(&mut app.file_info.has_headers,
                         //                   false, "No").clicked() {}
                     });
-                    ui.label(format!("Delimiter Character: {:?}", app.file_info.delimiter.borrow()));
+                    ui.label(format!("Delimiter Character: {:?}", app.file_info.delimiter.clone()));
                     ui.horizontal(|ui| {
                         if ui.radio_value(&mut app.file_info.delimiter,
                                           Delimiter::Comma, "COMMA").clicked() {}
-                        // if ui.radio_value(&mut app.file_info.delimiter,
-                        //                   Delimiter::Tab, "TAB").clicked() {}
-                        // if ui.radio_value(&mut app.file_info.delimiter,
-                        //                   Delimiter::Semicolon, "SEMICOLON").clicked() {}
+                        if ui.radio_value(&mut app.file_info.delimiter,
+                                          Delimiter::Tab, "TAB").clicked() {}
+                        if ui.radio_value(&mut app.file_info.delimiter,
+                                          Delimiter::Semicolon, "SEMICOLON").clicked() {}
                         // if ui.radio_value(&mut app.file_info.delimiter,
                         //                   Delimiter::Auto, "AUTO").clicked() {}
                     });
@@ -388,7 +403,8 @@ pub mod viewer_app {
             app.records = get_records_from_pos(
                 app.file_path.clone(),
                 app.settings.current_pos.clone() + app.settings.num_rows_to_display,
-                app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
+                app.settings.num_rows_to_display.clone(), app.file_info.has_headers,
+            get_delimiter(app.file_info.delimiter.clone()));
             app.settings.current_pos = app.settings.current_pos + app.settings.num_rows_to_display;
             if (app.settings.current_pos + app.settings.num_rows_to_display) > app.file_info.total_rows {}
         } else /* No more content in file */ {
@@ -411,13 +427,15 @@ pub mod viewer_app {
             app.records = get_records_from_pos(
                 app.file_path.clone(),
                 app.settings.current_pos.clone(),
-                app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
+                app.settings.num_rows_to_display.clone(), app.file_info.has_headers,
+                get_delimiter(app.file_info.delimiter.clone()));
         } else {
             app.settings.current_pos = app.settings.current_pos - app.settings.num_rows_to_display;
             app.records = get_records_from_pos(
                 app.file_path.clone(),
                 app.settings.current_pos.clone(),
-                app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
+                app.settings.num_rows_to_display.clone(), app.file_info.has_headers, get_delimiter(app.file_info.delimiter.clone())
+            );
         }
     }
 
@@ -428,7 +446,9 @@ pub mod viewer_app {
                 app.file_path.clone(),
                 app.settings.current_pos.clone(),
                 app.settings.num_rows_to_display.clone(),
-                app.file_info.has_headers);
+                app.file_info.has_headers,
+                get_delimiter(app.file_info.delimiter.clone()),
+            );
         } else {
             app.settings.dialog_msg = DialogMessage::StartOfFile;
             app.settings.dialog_open = true
@@ -443,7 +463,9 @@ pub mod viewer_app {
             app.records = get_records_from_pos(
                 app.file_path.clone(),
                 app.settings.current_pos.clone(),
-                app.settings.num_rows_to_display.clone(), app.file_info.has_headers);
+                app.settings.num_rows_to_display.clone(), app.file_info.has_headers,
+                get_delimiter(app.file_info.delimiter.clone())
+            );
         } else {
             app.settings.dialog_msg = DialogMessage::EndOfFile;
             app.settings.dialog_open = true;
@@ -459,11 +481,11 @@ pub mod viewer_app {
             app.file_info.total_rows = get_row_count(app.file_path
                 .clone());
             // let mut reader:Reader<File> = ReaderBuilder::new().has_headers(app.file_info.has_headers).from_path(app.file_path.clone().unwrap()).unwrap();
-            app.headers = get_headers_from_file(app.file_path.clone().unwrap());
+            app.headers = get_headers_from_file(app.file_path.clone().unwrap(), get_delimiter(app.file_info.delimiter.clone()));
             app.records = get_records_from_pos(app.file_path.clone(),
                                                app.settings.current_pos.clone(),
                                                app.settings.num_rows_to_display,
-                                               app.file_info.has_headers);
+                                               app.file_info.has_headers, get_delimiter(app.file_info.delimiter.clone()));
             app.app_state = AppState::Viewer;
         }
     }
@@ -513,7 +535,9 @@ pub mod viewer_app {
                                             app.file_path.clone(),
                                             0,
                                             app.settings.num_rows_to_display,
-                                            true);
+                                            true,
+                                            get_delimiter(app.file_info.delimiter.clone()),
+                                        );
 
 
                                         app.settings.dialog_msg = DialogMessage::ExportedFile;
@@ -568,7 +592,9 @@ pub mod viewer_app {
                             app.records = get_records_from_pos(app.file_path.clone(),
                                                                row_matching - 1,
                                                                app.settings.num_rows_to_display,
-                                                               app.file_info.has_headers.clone());
+                                                               app.file_info.has_headers.clone(),
+                                                               get_delimiter(app.file_info.delimiter.clone()),
+                            );
                             app.settings.current_pos = row_matching - 1;
                             if app.settings.find_matches_index < app.settings.find_matching_rows.len() - 1 {
                                 app.settings.find_matches_index += 1;

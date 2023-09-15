@@ -23,10 +23,10 @@ pub mod reader {
     }
 
     /// Extracts and returns the headers from a file-read reader object
-    pub fn get_headers_from_file(file_path: String) -> StringRecord {
+    pub fn get_headers_from_file(file_path: String, delimiter: char) -> StringRecord {
         let file = File::open(file_path).unwrap();
         let mut reader = BufReader::new(file);
-        let mut header_reader = ReaderBuilder::new()
+        let mut header_reader = ReaderBuilder::new().delimiter(u8::try_from(delimiter).unwrap())
             .has_headers(false)
             .from_reader(&mut reader);
         let header = header_reader.headers().unwrap().clone();
@@ -166,7 +166,7 @@ pub mod reader {
     ///         assert_eq!(records[1][0], "Charlie");
     ///     }
     /// ```
-    pub fn get_records_from_pos(file_path: Option<String>, pos: usize, num_of_rows_to_display: usize, has_header: bool) -> Vec<StringRecord> {
+    pub fn get_records_from_pos(file_path: Option<String>, pos: usize, num_of_rows_to_display: usize, has_header: bool, delimiter: char) -> Vec<StringRecord> {
         let file = File::open(file_path.unwrap()).unwrap();
         let mut reader = BufReader::new(file);
         let mut buffer = Vec::new();
@@ -183,7 +183,7 @@ pub mod reader {
 
 
         let mut csv_reader = ReaderBuilder::new()
-            .delimiter(b',')
+            .delimiter(u8::try_from(delimiter).unwrap())
             .has_headers(!has_header)
             .from_reader(reader);
 
