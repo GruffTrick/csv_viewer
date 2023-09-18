@@ -49,8 +49,8 @@ available at: https://github.com/PolyMeilex/rfd
 
 ## Changelog
 
-### 1.0.1 - added delimiter Selection Functionality in the main menu.
+- 1.0.1 - added delimiter selection option in the main menu.
 
-### v1.0.0 - initial public release
+- v1.0.0 - initial public release
 =======
 >>>>>>> refs/remotes/origin/main
