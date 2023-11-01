@@ -1,0 +1,4 @@
+title: CSV_Viewer
+description: CSV Viewer for Linux, written in Rust.
+show_downloads: true
+theme: jekyll-theme-minimal
