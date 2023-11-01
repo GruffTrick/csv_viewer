@@ -2,9 +2,10 @@
 Lightweight CSV Viewer for use in Linux.
 Written in Rust.
 
+![Viewer Screen](/csv_viewer/assets/img/viewer.png?raw=true "Viewer Screen")
 
 ## Dependencies
-The following packages required to run on linux:
+The following packages required to run on Linux:
 ```
 sudo apt-get install -y libclang-dev libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev
 ```
