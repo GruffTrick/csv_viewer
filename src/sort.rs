@@ -1,13 +1,10 @@
 pub mod sort {
+    use csv::{ReaderBuilder, StringRecord, WriterBuilder};
     use std::borrow::Borrow;
-    use csv::{Position, ReaderBuilder, StringRecord, WriterBuilder};
-    use serde::{Deserialize, Serialize};
     use std::error::Error;
-    use std::fs::{File, OpenOptions, remove_file};
-    use std::vec::IntoIter;
-    use std::io::{BufRead, BufReader, BufWriter, Seek, SeekFrom, Write};
+    use std::fs::{remove_file, File, OpenOptions};
+    use std::io::{Write};
     use sysinfo::{System, SystemExt};
-
 
     /// Sorts the records from the data stored at `file_path` and exports sorted data to `output_path`
     ///
@@ -35,17 +32,27 @@ pub mod sort {
     ///     assert_eq!(records.next().unwrap()?, ["Bob", "30", "Male"]);
     ///     assert!(records.next().is_none());
     /// ```
-    pub fn sort_records(file_path: String, output_path: String, field_index: usize) -> Result<(), Box<dyn Error>> {
+    ///
+    pub fn sort_records(
+        file_path: String,
+        output_path: String,
+        field_index: usize,
+    ) -> Result<(), Box<dyn Error>> {
         match remove_file(output_path.clone()) {
             Ok(()) => println!("File successfully deleted."),
             Err(e) => println!("File not found: {}", output_path),
         }
 
         // Open the CSV file
-        let file = OpenOptions::new().read(true).write(true).open(file_path.clone())?;
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(file_path.clone())?;
         let file_size = file.metadata()?.len();
         let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(file);
-        let mut h_test = ReaderBuilder::new().has_headers(true).from_path(file_path.clone())?;
+        let mut h_test = ReaderBuilder::new()
+            .has_headers(true)
+            .from_path(file_path.clone())?;
 
         // Create a new sorted CSV file
         let sorted_file = OpenOptions::new()
@@ -54,7 +61,9 @@ pub mod sort {
             .create(true)
             .truncate(true)
             .open(output_path)?;
-        let mut wtr = WriterBuilder::new().has_headers(true).from_writer(sorted_file);
+        let mut wtr = WriterBuilder::new()
+            .has_headers(true)
+            .from_writer(sorted_file);
 
         // Write the CSV header to the new file
         let header = rdr.headers()?;
@@ -77,7 +86,6 @@ pub mod sort {
             // rdr.seek(position.clone())?;
             // println!("{:?}", position);
 
-
             // Read the chunk into memory
             let mut chunk: Vec<StringRecord> = Vec::new();
 
@@ -89,11 +97,10 @@ pub mod sort {
                         if !matches(&record, &h) {
                             chunk.push(record);
                         }
-                    },
+                    }
                     Err(e) => println!("Error: Cannot Read Chunk"),
                 }
             }
-
 
             // Sort the records by field index
             chunk.sort_by_key(|record| record.get(field_index).unwrap().to_string());
@@ -127,49 +134,9 @@ pub mod sort {
     /// assert_eq!(match_result, true);
     /// ```
     fn matches(record: &StringRecord, header: &StringRecord) -> bool {
-        if record == header { return true };
+        if record == header {
+            return true;
+        };
         false
     }
 }
-//
-// #[cfg(tests)]
-// mod tests {
-//     use csv::ReaderBuilder;
-//
-//     #[test]
-//     fn test_sort_records() -> Result<(), Box<dyn Error>> {
-//         use std::error::Error;
-//         use std::fs::File;
-//         use std::io::prelude::*;
-//         use csv::{ReaderBuilder, WriterBuilder, StringRecord};
-//
-//         // create the file and writer.
-//         let file = File::create("tests/test_sort.txt")?;
-//         let mut csv_writer = WriterBuilder::new().has_headers(true).from_writer(file);
-//
-//         csv_writer.write_record(&[City,State,Population,Latitude,Longitude])?;
-//         csv_writer.write_record(&["Sandfort", "AL", "", "32.3380556", "-85.2233333"]);
-//         csv_writer.write_record(&["Shadow Oaks Addition", "AR", "", "34.9555556", "-91.9475000"]);
-//         csv_writer.write_record(&["Selma", "AL", "18980", "32.4072222", "-87.0211111"]);
-//         csv_writer.write_record(&["Richards Crossroads", "AL", "", "31.7369444", "-85.2644444"])?;
-//
-//         let file = File::open("tests/test_sort_output.txt")?;
-//         let reader = BufReader::new(file);
-//         let mut records: Vec<StringRecord> = Vec::new();
-//
-//         // iterate over the records
-//         let mut csv_reader = csv::ReaderBuilder::new().has_headers(true).from_reader(reader);
-//         for result in csv_reader.records() {
-//             let record = result?;
-//             records.push(record);
-//         }
-//
-//         let sorted_records = vec![["Richards Crossroads", "AL", "", "31.7369444", "-85.2644444"],["Sandfort", "AL", "", "32.3380556", "-85.2233333"],["Selma", "AL", "18980", "32.4072222", "-87.0211111"],["Shadow Oaks Addition", "AR", "", "34.9555556", "-91.9475000"]];
-//
-//         sort_records(String::from("tests/test_sort.txt"), String::from("tests/test_sort_output.txt"), 0);
-//
-//         assert_eq!(sorted_records, records);
-//
-//         Ok(())
-//     }
-// }

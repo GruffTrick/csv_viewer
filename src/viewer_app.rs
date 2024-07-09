@@ -1,28 +1,27 @@
 pub mod viewer_app {
-    use std::borrow::{Borrow, BorrowMut};
-    use std::error::Error;
-    use std::vec::IntoIter;
-    use std::fs::File;
-    use std::io::{BufRead, Stdin};
+    use std::borrow::{Borrow};
 
-    use csv::{Reader, ReaderBuilder, StringRecord};
+    use csv::{StringRecord};
 
-    use egui::style::default_text_styles;
-    use egui::{Align2, Context, Label, Painter, Pos2, Response, Sense, Ui, Vec2};
-    use egui_extras::{TableBuilder, Column};
+    use eframe::{Frame};
+    use egui::{Align2, Context, Pos2, Sense, Ui, Vec2};
+    use egui_extras::{Column, TableBuilder};
     use egui_extras::{Size, StripBuilder};
-    use eframe::{Theme, Frame};
 
-    use rfd::FileDialog;
     use atty;
-    use tracing_subscriber::fmt::format;
+    use rfd::FileDialog;
 
+    use crate::find::find::{find_matching_rows, find_row_of_next};
     use crate::reader::reader::*;
     use crate::sort::sort::sort_records;
-    use crate::find::find::{find_matching_rows, find_row_of_next};
 
     #[derive(PartialEq, Debug, Clone)]
-    enum Delimiter { Comma, Tab, Semicolon, Auto }
+    enum Delimiter {
+        Comma,
+        Tab,
+        Semicolon,
+        Auto,
+    }
 
     struct FileInfo {
         delimiter: Delimiter,
@@ -42,7 +41,6 @@ pub mod viewer_app {
             }
         }
     }
-
 
     enum AppState {
         MainMenu,
@@ -117,17 +115,16 @@ pub mod viewer_app {
         }
     }
 
-
     impl eframe::App for ViewerApp {
         /// Called each time the UI needs to be repainted
         /// Widgets are placed inside of their respective panels
-        fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        fn update(&mut self, ctx: &Context, frame: &mut Frame) {
             match self.app_state {
                 AppState::MainMenu => {
                     show_main_menu_window(self, ctx, frame);
                 }
                 AppState::Viewer => {
-                    show_viewer_window(self, ctx, frame);
+                    show_viewer_window(self, ctx);
                 }
                 AppState::Sorter => {
                     show_sorter_window(self, ctx, frame);
@@ -143,17 +140,26 @@ pub mod viewer_app {
                 show_quit_confirmation(self, ctx, frame);
             }
 
-
             // Checks if a dialog box with a required confirmation to close is set to open
             if self.settings.dialog_open == true {
                 let mut dialog_msg: &str = "";
                 match self.settings.dialog_msg {
-                    DialogMessage::None => { dialog_msg = "Error: No Dialog Message"; }
-                    DialogMessage::NextPage => { dialog_msg = "Already on Last Page"; }
-                    DialogMessage::PreviousPage => { dialog_msg = "Already on First Page"; }
-                    DialogMessage::StartOfFile => { dialog_msg = "Already at Start of File"; }
-                    DialogMessage::EndOfFile => { dialog_msg = "Already at End of File"; }
-                    DialogMessage::ExportedFile => { dialog_msg = "Sorted File Exported Successfully" }
+                    DialogMessage::None => {
+                        dialog_msg = "Error: No Dialog Message";
+                    }
+                    DialogMessage::NextPage => {
+                        dialog_msg = "Already on Last Page";
+                    }
+                    DialogMessage::PreviousPage => {
+                        dialog_msg = "Already on First Page";
+                    }
+                    DialogMessage::StartOfFile => {
+                        dialog_msg = "Already at Start of File";
+                    }
+                    DialogMessage::EndOfFile => {
+                        dialog_msg = "Already at End of File";
+                    }
+                    DialogMessage::ExportedFile => dialog_msg = "Sorted File Exported Successfully",
                 }
                 show_dialog_confirmation(self, ctx, dialog_msg);
             }
@@ -184,7 +190,7 @@ pub mod viewer_app {
             delim = ';';
         }
 
-        return delim
+        return delim;
     }
 
     /// Shows the main menu window inside the frame.
@@ -202,21 +208,39 @@ pub mod viewer_app {
                             .logarithmic(true)
                             .text("Max Rows to Display"),
                     );
-                    ui.label(format!("Has Headers: {:?}", app.file_info.has_headers.borrow()));
+                    ui.label(format!(
+                        "Has Headers: {:?}",
+                        app.file_info.has_headers.borrow()
+                    ));
                     ui.horizontal(|ui| {
-                        if ui.radio_value(&mut app.file_info.has_headers,
-                                          true, "Yes").clicked() {}
+                        if ui
+                            .radio_value(&mut app.file_info.has_headers, true, "Yes")
+                            .clicked()
+                        {}
                         // if ui.radio_value(&mut app.file_info.has_headers,
                         //                   false, "No").clicked() {}
                     });
-                    ui.label(format!("Delimiter Character: {:?}", app.file_info.delimiter.clone()));
+                    ui.label(format!(
+                        "Delimiter Character: {:?}",
+                        app.file_info.delimiter.clone()
+                    ));
                     ui.horizontal(|ui| {
-                        if ui.radio_value(&mut app.file_info.delimiter,
-                                          Delimiter::Comma, "COMMA").clicked() {}
-                        if ui.radio_value(&mut app.file_info.delimiter,
-                                          Delimiter::Tab, "TAB").clicked() {}
-                        if ui.radio_value(&mut app.file_info.delimiter,
-                                          Delimiter::Semicolon, "SEMICOLON").clicked() {}
+                        if ui
+                            .radio_value(&mut app.file_info.delimiter, Delimiter::Comma, "COMMA")
+                            .clicked()
+                        {}
+                        if ui
+                            .radio_value(&mut app.file_info.delimiter, Delimiter::Tab, "TAB")
+                            .clicked()
+                        {}
+                        if ui
+                            .radio_value(
+                                &mut app.file_info.delimiter,
+                                Delimiter::Semicolon,
+                                "SEMICOLON",
+                            )
+                            .clicked()
+                        {}
                         // if ui.radio_value(&mut app.file_info.delimiter,
                         //                   Delimiter::Auto, "AUTO").clicked() {}
                     });
@@ -236,7 +260,7 @@ pub mod viewer_app {
     }
 
     /// Shows the viewer window containing the csv data, inside frame.
-    fn show_viewer_window(app: &mut ViewerApp, ctx: &Context, frame: &mut eframe::Frame) {
+    fn show_viewer_window(app: &mut ViewerApp, ctx: &Context) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // top panel for a menu bar:
             egui::menu::bar(ui, |ui| {
@@ -323,32 +347,42 @@ pub mod viewer_app {
                             strip.cell(|ui| {});
                         });
                 });
-            egui::TopBottomPanel::bottom("bottom_panel").show_separator_line(true).show(ctx, |ui| {
-                ui.horizontal_centered(|ui| {
-                    // Display the total record count of file and page's position in file
-                    if app.file_info.has_headers && (app.file_info.total_rows > 1) {
-                        // If a file had headers, remove header from row count
-                        ui.label(format!("Total Rows: {}", app.file_info.total_rows.clone() - 1));
-                    } else {
-                        ui.label(format!("Total Rows: {}", app.file_info.total_rows.clone()));
-                    }
-                    if app.file_info.has_headers && (app.settings.current_pos > 0) {
-                        // ignore header row in count.
-                        ui.label(format!("Top Pos: {}", app.settings.current_pos.clone() + 1));
-                    } else {
-                        ui.label(format!("Top Pos: {}", app.settings.current_pos.clone()));
-                    }
-                    if ui.button("Next Page").clicked() { show_next_page(app); }
-                    if ui.button("Prev Page").clicked() { show_prev_page(app); }
+            egui::TopBottomPanel::bottom("bottom_panel")
+                .show_separator_line(true)
+                .show(ctx, |ui| {
+                    ui.horizontal_centered(|ui| {
+                        // Display the total record count of file and page's position in file
+                        if app.file_info.has_headers && (app.file_info.total_rows > 1) {
+                            // If a file had headers, remove header from row count
+                            ui.label(format!(
+                                "Total Rows: {}",
+                                app.file_info.total_rows.clone() - 1
+                            ));
+                        } else {
+                            ui.label(format!("Total Rows: {}", app.file_info.total_rows.clone()));
+                        }
+                        if app.file_info.has_headers && (app.settings.current_pos > 0) {
+                            // ignore header row in count.
+                            ui.label(format!("Top Pos: {}", app.settings.current_pos.clone() + 1));
+                        } else {
+                            ui.label(format!("Top Pos: {}", app.settings.current_pos.clone()));
+                        }
+                        if ui.button("Next Page").clicked() {
+                            show_next_page(app);
+                        }
+                        if ui.button("Prev Page").clicked() {
+                            show_prev_page(app);
+                        }
 
-                    egui::warn_if_debug_build(ui);
+                        egui::warn_if_debug_build(ui);
+                    });
                 });
-            });
         });
     }
 
     fn build_table(app: &mut ViewerApp, ctx: &Context, ui: &mut Ui) {
-        TableBuilder::new(ui).max_scroll_height(f32::INFINITY)
+        TableBuilder::new(ui)
+            .max_scroll_height(f32::INFINITY)
             .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
             .striped(true) // Eventually needs to be a struct parameter
             .resizable(true) // Eventually needs to be a struct parameter
@@ -356,7 +390,10 @@ pub mod viewer_app {
             .column(Column::remainder())
             .header(20.0, |mut header| {
                 header.col(|ui| {
-                    if ui.add(egui::Label::new("#").sense(Sense::click())).clicked() {
+                    if ui
+                        .add(egui::Label::new("#").sense(Sense::click()))
+                        .clicked()
+                    {
                         egui::Window::new("Clicked Row")
                             .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
                             .collapsible(false)
@@ -368,7 +405,10 @@ pub mod viewer_app {
                 });
                 for record in app.headers.iter() {
                     header.col(|ui| {
-                        if ui.add(egui::Label::new(format!("{}", record)).sense(Sense::click())).clicked() {
+                        if ui
+                            .add(egui::Label::new(format!("{}", record)).sense(Sense::click()))
+                            .clicked()
+                        {
                             egui::Window::new("Clicked header")
                                 .anchor(Align2::CENTER_CENTER, (Vec2 { x: 0.0, y: 0.0 }))
                                 .collapsible(false)
@@ -403,11 +443,17 @@ pub mod viewer_app {
             app.records = get_records_from_pos(
                 app.file_path.clone(),
                 app.settings.current_pos.clone() + app.settings.num_rows_to_display,
-                app.settings.num_rows_to_display.clone(), app.file_info.has_headers,
-            get_delimiter(app.file_info.delimiter.clone()));
+                app.settings.num_rows_to_display.clone(),
+                app.file_info.has_headers,
+                get_delimiter(app.file_info.delimiter.clone()),
+            );
             app.settings.current_pos = app.settings.current_pos + app.settings.num_rows_to_display;
-            if (app.settings.current_pos + app.settings.num_rows_to_display) > app.file_info.total_rows {}
-        } else /* No more content in file */ {
+            if (app.settings.current_pos + app.settings.num_rows_to_display)
+                > app.file_info.total_rows
+            {}
+        } else
+        /* No more content in file */
+        {
             app.settings.dialog_msg = DialogMessage::NextPage;
             app.settings.dialog_open = true;
         }
@@ -427,14 +473,18 @@ pub mod viewer_app {
             app.records = get_records_from_pos(
                 app.file_path.clone(),
                 app.settings.current_pos.clone(),
-                app.settings.num_rows_to_display.clone(), app.file_info.has_headers,
-                get_delimiter(app.file_info.delimiter.clone()));
+                app.settings.num_rows_to_display.clone(),
+                app.file_info.has_headers,
+                get_delimiter(app.file_info.delimiter.clone()),
+            );
         } else {
             app.settings.current_pos = app.settings.current_pos - app.settings.num_rows_to_display;
             app.records = get_records_from_pos(
                 app.file_path.clone(),
                 app.settings.current_pos.clone(),
-                app.settings.num_rows_to_display.clone(), app.file_info.has_headers, get_delimiter(app.file_info.delimiter.clone())
+                app.settings.num_rows_to_display.clone(),
+                app.file_info.has_headers,
+                get_delimiter(app.file_info.delimiter.clone()),
             );
         }
     }
@@ -455,7 +505,6 @@ pub mod viewer_app {
         }
     }
 
-
     ///Shows last page with the number of rows specified.
     fn show_last_page(app: &mut ViewerApp) {
         if app.file_info.total_rows > app.settings.num_rows_to_display {
@@ -463,8 +512,9 @@ pub mod viewer_app {
             app.records = get_records_from_pos(
                 app.file_path.clone(),
                 app.settings.current_pos.clone(),
-                app.settings.num_rows_to_display.clone(), app.file_info.has_headers,
-                get_delimiter(app.file_info.delimiter.clone())
+                app.settings.num_rows_to_display.clone(),
+                app.file_info.has_headers,
+                get_delimiter(app.file_info.delimiter.clone()),
             );
         } else {
             app.settings.dialog_msg = DialogMessage::EndOfFile;
@@ -472,20 +522,24 @@ pub mod viewer_app {
         }
     }
 
-
     /// Open a delimited data file and read in their headers and records.
     /// Uses the OS file dialog window by utilising RUSTY FILE DIALOGS by .
     fn open_file(app: &mut ViewerApp) {
         if let Some(path) = FileDialog::new().pick_file() {
             app.file_path = Option::from(path.display().to_string());
-            app.file_info.total_rows = get_row_count(app.file_path
-                .clone());
+            app.file_info.total_rows = get_row_count(app.file_path.clone());
             // let mut reader:Reader<File> = ReaderBuilder::new().has_headers(app.file_info.has_headers).from_path(app.file_path.clone().unwrap()).unwrap();
-            app.headers = get_headers_from_file(app.file_path.clone().unwrap(), get_delimiter(app.file_info.delimiter.clone()));
-            app.records = get_records_from_pos(app.file_path.clone(),
-                                               app.settings.current_pos.clone(),
-                                               app.settings.num_rows_to_display,
-                                               app.file_info.has_headers, get_delimiter(app.file_info.delimiter.clone()));
+            app.headers = get_headers_from_file(
+                app.file_path.clone().unwrap(),
+                get_delimiter(app.file_info.delimiter.clone()),
+            );
+            app.records = get_records_from_pos(
+                app.file_path.clone(),
+                app.settings.current_pos.clone(),
+                app.settings.num_rows_to_display,
+                app.file_info.has_headers,
+                get_delimiter(app.file_info.delimiter.clone()),
+            );
             app.app_state = AppState::Viewer;
         }
     }
@@ -511,11 +565,16 @@ pub mod viewer_app {
                     // ui.label(format!("{:?}", app.headers));
                     ui.horizontal_wrapped(|ui| {
                         for header in app.headers.into_iter() {
-                            if ui.button(header).clicked() { app.settings.index_selected_header = current_index.clone() };
+                            if ui.button(header).clicked() {
+                                app.settings.index_selected_header = current_index.clone()
+                            };
                             current_index = current_index + 1;
                         }
                     });
-                    ui.label(format!("Selected Header: {:?}", app.headers.get(app.settings.index_selected_header).unwrap()));
+                    ui.label(format!(
+                        "Selected Header: {:?}",
+                        app.headers.get(app.settings.index_selected_header).unwrap()
+                    ));
                     ui.separator();
 
                     ui.horizontal_wrapped(|ui| {
@@ -525,12 +584,16 @@ pub mod viewer_app {
                             // Choose Export path
                             if let Some(path) = FileDialog::new().save_file() {
                                 output_path = path.display().to_string();
-                                match sort_records(app.file_path.clone().unwrap(), output_path.clone(),
-                                                   app.settings.index_selected_header, ) {
+                                match sort_records(
+                                    app.file_path.clone().unwrap(),
+                                    output_path.clone(),
+                                    app.settings.index_selected_header,
+                                ) {
                                     Ok(_) => {
                                         app.settings.current_pos = 0;
                                         app.file_path = Option::from(output_path.clone());
-                                        app.file_info.total_rows = get_row_count(app.file_path.clone());
+                                        app.file_info.total_rows =
+                                            get_row_count(app.file_path.clone());
                                         app.records = get_records_from_pos(
                                             app.file_path.clone(),
                                             0,
@@ -539,21 +602,23 @@ pub mod viewer_app {
                                             get_delimiter(app.file_info.delimiter.clone()),
                                         );
 
-
                                         app.settings.dialog_msg = DialogMessage::ExportedFile;
                                         app.settings.dialog_open = true;
                                     }
-                                    Err(_) => { println!("Error: Cannot Sort Records"); }
+                                    Err(_) => {
+                                        println!("Error: Cannot Sort Records");
+                                    }
                                 }
                             }
                         }
-                        if ui.button("Return to File").clicked() { app.app_state = AppState::Viewer; }
+                        if ui.button("Return to File").clicked() {
+                            app.app_state = AppState::Viewer;
+                        }
                     });
                     egui::warn_if_debug_build(ui);
                 });
         });
     }
-
 
     /// Opens the find window inside the frame of the Viewer App.
     /// The find window displays as a small popup window above the viewer interface.
@@ -565,11 +630,20 @@ pub mod viewer_app {
             .movable(true)
             .default_pos(Pos2 { x: 0.0, y: 0.0 })
             .show(ctx, |ui| {
-                let response = ui.add(egui::TextEdit::singleline(&mut app.settings.find_string).desired_width(250.0));
-                ui.label(format!("(Case-Sensitive) Searching for: {:?}", app.settings.find_string.clone()));
+                let response = ui.add(
+                    egui::TextEdit::singleline(&mut app.settings.find_string).desired_width(250.0),
+                );
+                ui.label(format!(
+                    "(Case-Sensitive) Searching for: {:?}",
+                    app.settings.find_string.clone()
+                ));
                 if ui.button("Find Matches").clicked() {
                     app.settings.find_matches_index = 0;
-                    app.settings.find_matching_rows = find_matching_rows(app.file_path.clone(), app.settings.find_string.clone(), app.file_info.has_headers.clone());
+                    app.settings.find_matching_rows = find_matching_rows(
+                        app.file_path.clone(),
+                        app.settings.find_string.clone(),
+                        app.file_info.has_headers.clone(),
+                    );
                     println!("{:?}", app.settings.find_matching_rows.clone());
                 }
                 if response.changed() {
@@ -579,24 +653,37 @@ pub mod viewer_app {
                 }
                 if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                     app.settings.find_matches_index = 0;
-                    app.settings.find_matching_rows = find_matching_rows(app.file_path.clone(), app.settings.find_string.clone(), app.file_info.has_headers.clone());
+                    app.settings.find_matching_rows = find_matching_rows(
+                        app.file_path.clone(),
+                        app.settings.find_string.clone(),
+                        app.file_info.has_headers.clone(),
+                    );
                     println!("{:?}", app.settings.find_matching_rows.clone());
                 }
-                ui.label(format!("Number of matches: {:?}", app.settings.find_matching_rows.len()));
+                ui.label(format!(
+                    "Number of matches: {:?}",
+                    app.settings.find_matching_rows.len()
+                ));
                 // ui.label(format!("Number of matches: {:?}", app.settings.find_matching_rows.clone()));
                 ui.horizontal(|ui| {
                     if ui.button("Show Next").clicked() {
                         if app.settings.find_matching_rows.len() > 0 {
-                            let row_matching: usize = find_row_of_next(app.settings.find_matching_rows.clone(), app.settings.find_matches_index.clone());
+                            let row_matching: usize = find_row_of_next(
+                                app.settings.find_matching_rows.clone(),
+                                app.settings.find_matches_index.clone(),
+                            );
                             println!("current row matching: {:?}", row_matching);
-                            app.records = get_records_from_pos(app.file_path.clone(),
-                                                               row_matching - 1,
-                                                               app.settings.num_rows_to_display,
-                                                               app.file_info.has_headers.clone(),
-                                                               get_delimiter(app.file_info.delimiter.clone()),
+                            app.records = get_records_from_pos(
+                                app.file_path.clone(),
+                                row_matching - 1,
+                                app.settings.num_rows_to_display,
+                                app.file_info.has_headers.clone(),
+                                get_delimiter(app.file_info.delimiter.clone()),
                             );
                             app.settings.current_pos = row_matching - 1;
-                            if app.settings.find_matches_index < app.settings.find_matching_rows.len() - 1 {
+                            if app.settings.find_matches_index
+                                < app.settings.find_matching_rows.len() - 1
+                            {
                                 app.settings.find_matches_index += 1;
                             } else {
                                 app.settings.find_matches_index = 0;
@@ -648,7 +735,6 @@ pub mod viewer_app {
                 });
             });
     }
-
 
     /// Launches the GUI for the Viewer App
     pub fn run_app() -> eframe::Result<()> {

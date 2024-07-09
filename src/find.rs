@@ -2,13 +2,11 @@ pub mod find {
     use std::fs::File;
     use std::io::{BufRead, BufReader};
 
-    use csv::StringRecord;
-
-
     /// Finds all matches and returns a vector of the indices of rows with matching strings.
-    ///
-    /// # Example
-    ///
+    ///# Example
+    /// This test creates a CSV file with 5 rows, and then calls the `find_matching_rows` function
+    ///to search for rows that contain the string "30". The function should return the indices of the
+    /// first and last rows. This is because they both contain the string "30".
     /// ```
     /// use csv_viewer::find::find::find_matching_rows;
     ///
@@ -23,11 +21,12 @@ pub mod find {
     /// // matching row indices should be 0 and 4.
     /// assert_eq!(result, vec![0, 4]);
     /// ```
-    ///
-    /// This test creates a CSV file with 5 rows, and then calls the `find_matching_rows` function
-    /// to search for rows that contain the string "30". The function should return the indices of the
-    /// first and last rows. This is because they both contain the string "30".
-    pub fn find_matching_rows(file_path: Option<String>, search_str: String, has_headers: bool) -> Vec<usize> {
+
+    pub fn find_matching_rows(
+        file_path: Option<String>,
+        search_str: String,
+        has_headers: bool,
+    ) -> Vec<usize> {
         let mut matched_rows: Vec<usize> = Vec::new();
         let file = File::open(file_path.unwrap()).unwrap();
         let reader = BufReader::new(file);
@@ -54,8 +53,8 @@ pub mod find {
     /// using the index i for the element within the vec.
     ///
     /// # Example
-    ///
-     /// use csv_viewer::find::find::find_row_of_next;
+    ///```
+    /// use csv_viewer::find::find::find_row_of_next;
     ///
     /// let vec = vec![1, 2, 3, 4, 5];
     ///
@@ -63,7 +62,6 @@ pub mod find {
     /// assert_eq!(find_row_of_next(vec, 3), 4);
     /// assert_eq!(find_row_of_next(vec, 4), 0);
     /// ```
-    ///
     pub fn find_row_of_next(vec: Vec<usize>, i: usize) -> usize {
         let mut match_index: usize = 0;
         if i < vec.len() {
