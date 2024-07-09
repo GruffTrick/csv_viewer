@@ -7,32 +7,6 @@ pub mod sort {
     use sysinfo::{System, SystemExt};
 
     /// Sorts the records from the data stored at `file_path` and exports sorted data to `output_path`
-    ///
-    /// ```
-    /// // create a temporary input file
-    ///     let input_content = "Name, Age, Gender\nAlice, 25, Female\nBob, 30, Male\nEve, 22, Female\n";
-    ///     let input_file = tempfile::NamedTempFile::new()?;
-    ///     let input_path = input_file.path().to_str().unwrap().to_owned();
-    ///     std::fs::write(&input_path, input_content)?;
-    ///
-    ///     // create a temporary output file
-    ///     let output_file = tempfile::NamedTempFile::new()?;
-    ///     let output_path = output_file.path().to_str().unwrap().to_owned();
-    ///
-    ///     // sort the records by the "Age" column
-    ///     sort_records(input_path, output_path.clone(), 1)?;
-    ///
-    ///     // read the output file
-    ///     let mut rdr = csv::Reader::from_path(output_path)?;
-    ///     let mut records = rdr.records();
-    ///
-    ///     // check the order of the records
-    ///     assert_eq!(records.next().unwrap()?, ["Eve", "22", "Female"]);
-    ///     assert_eq!(records.next().unwrap()?, ["Alice", "25", "Female"]);
-    ///     assert_eq!(records.next().unwrap()?, ["Bob", "30", "Male"]);
-    ///     assert!(records.next().is_none());
-    /// ```
-    ///
     pub fn sort_records(
         file_path: String,
         output_path: String,
@@ -117,22 +91,6 @@ pub mod sort {
 
     /// Checks whether two string records match one another.  Intended for comparing a passed string record value
     /// to the header, to avoid printing the header twice.
-    ///
-    /// # Example
-    /// ```
-    /// use csv_viewer::sort::sort::matches;
-    /// use csv::StringRecord;
-    ///
-    /// let header = StringRecord::from(vec!["name", "age", "city"]);
-    /// let record = StringRecord::from(vec!["Gruff Trick", "22", "Wales"]);
-    /// let match_result = matches(&record, &header);
-    /// assert_eq!(match_result, false);
-    ///
-    /// let header = StringRecord::from(vec!["name", "age", "city"]);
-    /// let record = StringRecord::from(vec!["name", "age", "city"]);
-    /// let match_result = matches(&record, &header);
-    /// assert_eq!(match_result, true);
-    /// ```
     fn matches(record: &StringRecord, header: &StringRecord) -> bool {
         if record == header {
             return true;

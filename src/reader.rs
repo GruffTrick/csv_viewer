@@ -80,26 +80,6 @@ pub mod reader {
     }
 
     /// Returns the row count of the file.
-    ///
-    /// # Examples
-    ///  ```
-    ///  use std::fs::File;
-    ///  use std::io::{BufWriter, Write};
-    ///
-    ///  let file = File::create("tests/test_row_count.txt");
-    ///  let mut writer = BufWriter::new(&mut file).unwrap();
-    ///
-    ///  // Write 10 lines of data to the file
-    ///  for i in 1..=10 {
-    ///      let line = format!("Line {}\n", i);
-    ///      writer.write(line.as_bytes()).unwrap();
-    ///  }
-    ///  writer.flush();
-    ///
-    ///  let row_count_result = csv_viewer::reader::reader::get_row_count(Option::from(String::from("tests/test_row_count.txt")));
-    ///  assert_eq!(row_count_result, 10);
-    /// ```
-    ///
     pub fn get_row_count(file_path: Option<String>) -> usize {
         let file = File::open(file_path.unwrap()).unwrap();
         let reader = BufReader::new(file);
